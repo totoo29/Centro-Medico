@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+
+{% block title %}Acceso Denegado - Consultorio Médico{% endblock %}
+{% block page_title %}Error 403{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6 text-center">
+        <div class="error-page">
+            <div class="error-code">
+                <h1 class="display-1 text-warning">403</h1>
+            </div>
+            
+            <div class="error-message mb-4">
+                <h3 class="mb-3">¡Acceso Denegado!</h3>
+                <p class="text-muted">
+                    Lo sentimos, no tienes permisos para acceder a esta página.
+                    Puede que necesites iniciar sesión o tener permisos especiales.
+                </p>
+            </div>
+            
+            <div class="error-icon mb-4">
+                <i class="fas fa-shield-alt fa-5x text-muted"></i>
+            </div>
+            
+            <div class="error-actions">
+                <a href="{{ url_for('main.index') }}" class="btn btn-primary btn-lg me-3">
+                    <i class="fas fa-home"></i> Ir al Dashboard
+                </a>
+                <button onclick="history.back()" class="btn btn-outline-secondary btn-lg">
+                    <i class="fas fa-arrow-left"></i> Volver Atrás
+                </button>
+            </div>
+            
+            <div class="error-help mt-5">
+                <div class="alert alert-warning">
+                    <h6><i class="fas fa-exclamation-triangle"></i> Posibles Causas:</h6>
+                    <ul class="list-unstyled mt-2 mb-0">
+                        <li><i class="fas fa-dot-circle fa-xs"></i> No tienes permisos de administrador</li>
+                        <li><i class="fas fa-dot-circle fa-xs"></i> Tu sesión puede haber expirado</li>
+                        <li><i class="fas fa-dot-circle fa-xs"></i> Intentas acceder a una función restringida</li>
+                    </ul>
+                </div>
+                
+                <div class="contact-admin mt-3">
+                    <h6>¿Necesitas acceso?</h6>
+                    <p class="text-muted">
+                        Contacta al administrador del sistema para solicitar los permisos necesarios.
+                    </p>
+                    <button class="btn btn-outline-info" onclick="contactarAdmin()">
+                        <i class="fas fa-envelope"></i> Contactar Administrador
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.error-page {
+    padding: 2rem 0;
+}
+
+.error-code h1 {
+    font-weight: 900;
+    font-size: 8rem;
+    line-height: 1;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+}
+
+.contact-admin {
+    background: #f8f9fa;
+    padding: 1rem;
+    border-radius: 8px;
+    border-left: 4px solid var(--warning-color);
+}
+
+@media (max-width: 768px) {
+    .error-code h1 {
+        font-size: 5rem;
+    }
+}
+</style>
+
+<script>
+function contactarAdmin() {
+    const mensaje = `Solicitud de Acceso al Sistema de Consultorio Médico
+    
+Usuario: [Tu nombre]
+Página solicitada: ${window.location.href}
+Fecha: ${new Date().toLocaleString()}
+    
+Por favor, proporciona acceso a la funcionalidad solicitada.`;
+    
+    const mailtoLink = `mailto:admin@consultorio.com?subject=Solicitud de Acceso&body=${encodeURIComponent(mensaje)}`;
+    window.location.href = mailtoLink;
+}
+</script>
+{% endblock %}

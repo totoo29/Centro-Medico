@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+
+{% block title %}Error del Servidor - Consultorio Médico{% endblock %}
+{% block page_title %}Error 500{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6 text-center">
+        <div class="error-page">
+            <div class="error-code">
+                <h1 class="display-1 text-danger">500</h1>
+            </div>
+            
+            <div class="error-message mb-4">
+                <h3 class="mb-3">¡Error Interno del Servidor!</h3>
+                <p class="text-muted">
+                    Lo sentimos, algo salió mal en nuestro servidor. 
+                    Nuestro equipo técnico ha sido notificado automáticamente.
+                </p>
+            </div>
+            
+            <div class="error-icon mb-4">
+                <i class="fas fa-tools fa-5x text-muted"></i>
+            </div>
+            
+            <div class="error-actions">
+                <a href="{{ url_for('main.index') }}" class="btn btn-primary btn-lg me-3">
+                    <i class="fas fa-home"></i> Ir al Dashboard
+                </a>
+                <button onclick="location.reload()" class="btn btn-outline-warning btn-lg">
+                    <i class="fas fa-sync-alt"></i> Intentar de Nuevo
+                </button>
+            </div>
+            
+            <div class="error-help mt-5">
+                <div class="alert alert-info">
+                    <h6><i class="fas fa-info-circle"></i> ¿Qué puedes hacer mientras tanto?</h6>
+                    <ul class="list-unstyled mt-2 mb-0">
+                        <li><i class="fas fa-dot-circle fa-xs"></i> Espera unos minutos e intenta nuevamente</li>
+                        <li><i class="fas fa-dot-circle fa-xs"></i> Verifica tu conexión a internet</li>
+                        <li><i class="fas fa-dot-circle fa-xs"></i> Contacta al administrador si el problema persiste</li>
+                    </ul>
+                </div>
+                
+                <div class="contact-admin mt-3">
+                    <h6>Contacto de Soporte Técnico:</h6>
+                    <p class="text-muted">
+                        <i class="fas fa-envelope"></i> soporte@consultorio.com<br>
+                        <i class="fas fa-phone"></i> +54 11 1234-5678
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.error-page {
+    padding: 2rem 0;
+}
+
+.error-code h1 {
+    font-weight: 900;
+    font-size: 8rem;
+    line-height: 1;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+}
+
+.contact-admin {
+    background: #f8f9fa;
+    padding: 1rem;
+    border-radius: 8px;
+    border-left: 4px solid var(--primary-color);
+}
+
+@media (max-width: 768px) {
+    .error-code h1 {
+        font-size: 5rem;
+    }
+}
+</style>
+{% endblock %}

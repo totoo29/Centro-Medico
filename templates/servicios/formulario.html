@@ -1,0 +1,540 @@
+{% extends "base.html" %}
+
+{% block title %}
+    {% if servicio %}Editar Servicio{% else %}Nuevo Servicio{% endif %} - Consultorio Médico
+{% endblock %}
+
+{% block page_title %}
+    {% if servicio %}Editar Servicio{% else %}Nuevo Servicio{% endif %}
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-{% if servicio %}edit{% else %}plus{% endif %}"></i>
+                    {% if servicio %}Editar Servicio - {{ servicio.nombre }}{% else %}Agregar Nuevo Servicio Médico{% endif %}
+                </h5>
+            </div>
+            <div class="card-body">
+                <form id="formServicio" method="POST" 
+                      action="{% if servicio %}{{ url_for('servicios.actualizar', id=servicio.id) }}{% else %}{{ url_for('servicios.crear') }}{% endif %}">
+                    
+                    <div class="row">
+                        <!-- Nombre del servicio -->
+                        <div class="col-md-8 mb-3">
+                            <label for="nombre" class="form-label">
+                                <i class="fas fa-medical-bag"></i> Nombre del Servicio <span class="text-danger">*</span>
+                            </label>
+                            <input type="text" class="form-control" id="nombre" name="nombre" 
+                                   value="{{ servicio.nombre if servicio else '' }}" required
+                                   placeholder="Ej: Consulta Cardiológica, Análisis de Sangre...">
+                            <div class="invalid-feedback"></div>
+                        </div>
+
+                        <!-- Categoría -->
+                        <div class="col-md-4 mb-3">
+                            <label for="categoria_id" class="form-label">
+                                <i class="fas fa-tags"></i> Categoría
+                            </label>
+                            <select class="form-select" id="categoria_id" name="categoria_id">
+                                <option value="">Sin categoría</option>
+                                {% for categoria in categorias %}
+                                    <option value="{{ categoria.id }}" 
+                                            {% if servicio and servicio.categoria_id == categoria.id %}selected{% endif %}>
+                                        {{ categoria.nombre }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <!-- Descripción -->
+                        <div class="col-md-12 mb-3">
+                            <label for="descripcion" class="form-label">
+                                <i class="fas fa-align-left"></i> Descripción
+                            </label>
+                            <textarea class="form-control" id="descripcion" name="descripcion" rows="3"
+                                      placeholder="Descripción detallada del servicio médico...">{{ servicio.descripcion if servicio else '' }}</textarea>
+                            <div class="form-text">Opcional: descripción para el paciente</div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <!-- Precio -->
+                        <div class="col-md-4 mb-3">
+                            <label for="precio" class="form-label">
+                                <i class="fas fa-dollar-sign"></i> Precio <span class="text-danger">*</span>
+                            </label>
+                            <div class="input-group">
+                                <span class="input-group-text">$</span>
+                                <input type="number" class="form-control" id="precio" name="precio" 
+                                       value="{{ servicio.precio if servicio else '' }}" 
+                                       min="0" step="0.01" required placeholder="0.00">
+                            </div>
+                            <div class="invalid-feedback"></div>
+                        </div>
+
+                        <!-- Duración -->
+                        <div class="col-md-4 mb-3">
+                            <label for="duracion" class="form-label">
+                                <i class="fas fa-clock"></i> Duración <span class="text-danger">*</span>
+                            </label>
+                            <div class="input-group">
+                                <input type="number" class="form-control" id="duracion" name="duracion" 
+                                       value="{{ servicio.duracion if servicio else '' }}" 
+                                       min="5" max="480" required placeholder="30">
+                                <span class="input-group-text">min</span>
+                            </div>
+                            <div class="form-text">Entre 5 y 480 minutos</div>
+                            <div class="invalid-feedback"></div>
+                        </div>
+
+                        <!-- Duración formateada -->
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">
+                                <i class="fas fa-info-circle"></i> Tiempo Estimado
+                            </label>
+                            <div class="form-control-plaintext bg-light rounded p-2">
+                                <span id="duracionFormateada">-</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Vista previa del servicio -->
+                    <div class="row mb-3">
+                        <div class="col-12">
+                            <div class="card bg-light">
+                                <div class="card-body">
+                                    <h6 class="card-title">
+                                        <i class="fas fa-eye"></i> Vista Previa del Servicio
+                                    </h6>
+                                    <div class="row">
+                                        <div class="col-md-8">
+                                            <div class="service-preview">
+                                                <h6 id="previewNombre" class="text-primary">Nombre del servicio</h6>
+                                                <p id="previewDescripcion" class="text-muted small">Descripción del servicio</p>
+                                                <div class="d-flex align-items-center">
+                                                    <span id="previewCategoria" class="badge bg-secondary me-2">Sin categoría</span>
+                                                    <span id="previewDuracion" class="badge bg-info me-2">0 min</span>
+                                                    <span id="previewPrecio" class="badge bg-success">$0.00</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4 text-center">
+                                            <div class="service-icon mb-2">
+                                                <i class="fas fa-medical-bag fa-3x text-primary"></i>
+                                            </div>
+                                            <small class="text-muted">Icono del servicio</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Configuraciones adicionales -->
+                    <div class="row mb-3">
+                        <div class="col-12">
+                            <div class="alert alert-info">
+                                <h6><i class="fas fa-lightbulb"></i> Sugerencias para el Servicio</h6>
+                                <ul class="mb-0">
+                                    <li>Use nombres descriptivos y claros para los servicios</li>
+                                    <li>La duración incluye tiempo de consulta y procedimientos</li>
+                                    <li>Los precios deben incluir todos los costos asociados</li>
+                                    <li>Las categorías ayudan a organizar mejor los servicios</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Botones de acción -->
+                    <div class="row">
+                        <div class="col-12">
+                            <div class="d-flex justify-content-between">
+                                <a href="{{ url_for('servicios.listar') }}" class="btn btn-secondary">
+                                    <i class="fas fa-arrow-left"></i> Volver a la Lista
+                                </a>
+                                
+                                <div>
+                                    {% if servicio %}
+                                        <a href="{{ url_for('servicios.detalle', id=servicio.id) }}" class="btn btn-outline-info me-2">
+                                            <i class="fas fa-eye"></i> Ver Detalle
+                                        </a>
+                                    {% endif %}
+                                    
+                                    <button type="button" class="btn btn-outline-warning me-2" onclick="limpiarFormulario()">
+                                        <i class="fas fa-eraser"></i> Limpiar
+                                    </button>
+                                    
+                                    <button type="submit" class="btn btn-success" id="btnGuardar">
+                                        <i class="fas fa-save"></i> 
+                                        {% if servicio %}Actualizar Servicio{% else %}Guardar Servicio{% endif %}
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        {% if servicio %}
+        <!-- Estadísticas del servicio -->
+        <div class="card mt-4">
+            <div class="card-header">
+                <h6 class="card-title mb-0">
+                    <i class="fas fa-chart-bar"></i> Estadísticas del Servicio
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3">
+                        <div class="stat-item text-center">
+                            <h4 class="text-primary">{{ servicio.turnos|length }}</h4>
+                            <small class="text-muted">Total de Turnos</small>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="stat-item text-center">
+                            <h4 class="text-success">{{ servicio.turnos|selectattr('estado', 'equalto', 'completado')|list|length }}</h4>
+                            <small class="text-muted">Completados</small>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="stat-item text-center">
+                            <h4 class="text-info">{{ servicio.turnos|selectattr('estado', 'equalto', 'pendiente')|list|length }}</h4>
+                            <small class="text-muted">Pendientes</small>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="stat-item text-center">
+                            <h4 class="text-warning">ID #{{ servicio.id }}</h4>
+                            <small class="text-muted">Identificador</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.service-preview {
+    min-height: 100px;
+}
+
+.service-icon {
+    opacity: 0.7;
+}
+
+.stat-item {
+    padding: 1rem;
+    border-right: 1px solid #eee;
+}
+
+.stat-item:last-child {
+    border-right: none;
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const campos = {
+        nombre: document.getElementById('nombre'),
+        descripcion: document.getElementById('descripcion'),
+        precio: document.getElementById('precio'),
+        duracion: document.getElementById('duracion'),
+        categoria_id: document.getElementById('categoria_id')
+    };
+
+    // Actualizar vista previa cuando cambian los campos
+    Object.values(campos).forEach(campo => {
+        campo.addEventListener('input', actualizarVistaPrevia);
+        campo.addEventListener('blur', validarCampo);
+    });
+
+    // Actualizar vista previa inicial
+    actualizarVistaPrevia();
+});
+
+function actualizarVistaPrevia() {
+    const nombre = document.getElementById('nombre').value.trim();
+    const descripcion = document.getElementById('descripcion').value.trim();
+    const precio = document.getElementById('precio').value;
+    const duracion = document.getElementById('duracion').value;
+    const categoriaSelect = document.getElementById('categoria_id');
+    
+    // Nombre
+    document.getElementById('previewNombre').textContent = nombre || 'Nombre del servicio';
+    
+    // Descripción
+    document.getElementById('previewDescripcion').textContent = 
+        descripcion || 'Descripción del servicio';
+    
+    // Precio
+    const precioFormateado = precio ? `${parseFloat(precio).toFixed(2)}` : '$0.00';
+    document.getElementById('previewPrecio').textContent = precioFormateado;
+    
+    // Duración
+    const duracionFormateada = formatearDuracion(parseInt(duracion) || 0);
+    document.getElementById('previewDuracion').textContent = duracionFormateada;
+    document.getElementById('duracionFormateada').textContent = duracionFormateada;
+    
+    // Categoría
+    const categoriaTexto = categoriaSelect.selectedOptions[0]?.text || 'Sin categoría';
+    document.getElementById('previewCategoria').textContent = categoriaTexto;
+    
+    // Cambiar color de la categoría si está seleccionada
+    const categoriaElement = document.getElementById('previewCategoria');
+    if (categoriaSelect.value) {
+        categoriaElement.className = 'badge bg-primary me-2';
+    } else {
+        categoriaElement.className = 'badge bg-secondary me-2';
+    }
+}
+
+function formatearDuracion(minutos) {
+    if (minutos === 0) return '0 min';
+    
+    const horas = Math.floor(minutos / 60);
+    const mins = minutos % 60;
+    
+    if (horas > 0) {
+        return mins > 0 ? `${horas}h ${mins}min` : `${horas}h`;
+    }
+    return `${mins}min`;
+}
+
+function validarCampo(event) {
+    const campo = event.target;
+    const valor = campo.value.trim();
+    
+    // Limpiar validaciones previas
+    campo.classList.remove('is-valid', 'is-invalid');
+    const feedback = campo.nextElementSibling;
+    if (feedback && feedback.classList.contains('invalid-feedback')) {
+        feedback.textContent = '';
+    }
+
+    // Validaciones específicas
+    switch (campo.id) {
+        case 'nombre':
+            if (!valor) {
+                mostrarError(campo, 'El nombre del servicio es obligatorio');
+                return false;
+            }
+            if (valor.length < 3) {
+                mostrarError(campo, 'El nombre debe tener al menos 3 caracteres');
+                return false;
+            }
+            if (valor.length > 100) {
+                mostrarError(campo, 'El nombre no puede exceder 100 caracteres');
+                return false;
+            }
+            break;
+
+        case 'precio':
+            if (!valor) {
+                mostrarError(campo, 'El precio es obligatorio');
+                return false;
+            }
+            const precio = parseFloat(valor);
+            if (precio < 0) {
+                mostrarError(campo, 'El precio debe ser mayor o igual a 0');
+                return false;
+            }
+            if (precio > 999999) {
+                mostrarError(campo, 'El precio es demasiado alto');
+                return false;
+            }
+            break;
+
+        case 'duracion':
+            if (!valor) {
+                mostrarError(campo, 'La duración es obligatoria');
+                return false;
+            }
+            const duracion = parseInt(valor);
+            if (duracion < 5) {
+                mostrarError(campo, 'La duración mínima es 5 minutos');
+                return false;
+            }
+            if (duracion > 480) {
+                mostrarError(campo, 'La duración máxima es 480 minutos (8 horas)');
+                return false;
+            }
+            break;
+
+        case 'descripcion':
+            if (valor.length > 1000) {
+                mostrarError(campo, 'La descripción no puede exceder 1000 caracteres');
+                return false;
+            }
+            break;
+    }
+
+    // Campo válido
+    if (valor) {
+        campo.classList.add('is-valid');
+    }
+    return true;
+}
+
+function mostrarError(campo, mensaje) {
+    campo.classList.add('is-invalid');
+    let feedback = campo.nextElementSibling;
+    
+    // Si el siguiente elemento no es feedback, buscar dentro del input-group
+    if (!feedback || !feedback.classList.contains('invalid-feedback')) {
+        feedback = campo.parentElement.querySelector('.invalid-feedback');
+    }
+    
+    if (feedback && feedback.classList.contains('invalid-feedback')) {
+        feedback.textContent = mensaje;
+    }
+}
+
+function limpiarFormulario() {
+    if (confirm('¿Está seguro de que desea limpiar todos los campos?')) {
+        document.getElementById('formServicio').reset();
+        
+        // Limpiar validaciones
+        document.querySelectorAll('.is-valid, .is-invalid').forEach(el => {
+            el.classList.remove('is-valid', 'is-invalid');
+        });
+        
+        // Actualizar vista previa
+        actualizarVistaPrevia();
+        
+        // Focus en primer campo
+        document.getElementById('nombre').focus();
+    }
+}
+
+// Envío del formulario
+document.getElementById('formServicio').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    // Validar todos los campos obligatorios
+    const camposObligatorios = ['nombre', 'precio', 'duracion'];
+    let todoValido = true;
+    
+    camposObligatorios.forEach(id => {
+        const campo = document.getElementById(id);
+        if (!validarCampo({target: campo})) {
+            todoValido = false;
+        }
+    });
+    
+    // Validar descripción si tiene valor
+    const descripcion = document.getElementById('descripcion');
+    if (descripcion.value.trim()) {
+        if (!validarCampo({target: descripcion})) {
+            todoValido = false;
+        }
+    }
+    
+    if (!todoValido) {
+        alert('Por favor, corrija los errores en el formulario');
+        return;
+    }
+    
+    // Mostrar loading
+    const btnGuardar = document.getElementById('btnGuardar');
+    const textoOriginal = btnGuardar.innerHTML;
+    btnGuardar.innerHTML = '<span class="loading"></span> Guardando...';
+    btnGuardar.disabled = true;
+    
+    // Enviar formulario
+    const formData = new FormData(this);
+    const url = this.action;
+    
+    fetch(url, {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
+    .then(response => {
+        if (response.redirected) {
+            window.location.href = response.url;
+        } else {
+            return response.json();
+        }
+    })
+    .then(data => {
+        if (data && data.success) {
+            window.location.href = "{{ url_for('servicios.listar') }}";
+        } else if (data && data.error) {
+            alert('Error: ' + data.error);
+            btnGuardar.innerHTML = textoOriginal;
+            btnGuardar.disabled = false;
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error de conexión. Por favor, intente nuevamente.');
+        btnGuardar.innerHTML = textoOriginal;
+        btnGuardar.disabled = false;
+    });
+});
+
+// Formateo automático del precio
+document.getElementById('precio').addEventListener('input', function(e) {
+    let valor = e.target.value;
+    
+    // Permitir solo números y punto decimal
+    valor = valor.replace(/[^0-9.]/g, '');
+    
+    // Permitir solo un punto decimal
+    const puntos = valor.split('.');
+    if (puntos.length > 2) {
+        valor = puntos[0] + '.' + puntos.slice(1).join('');
+    }
+    
+    // Limitar decimales a 2 lugares
+    if (puntos[1] && puntos[1].length > 2) {
+        valor = puntos[0] + '.' + puntos[1].substring(0, 2);
+    }
+    
+    e.target.value = valor;
+});
+
+// Validación en tiempo real para duración
+document.getElementById('duracion').addEventListener('input', function(e) {
+    let valor = parseInt(e.target.value);
+    
+    // Sugerir duraciones comunes
+    if (valor && valor > 0) {
+        let sugerencia = '';
+        
+        if (valor <= 15) sugerencia = 'Consulta rápida';
+        else if (valor <= 30) sugerencia = 'Consulta estándar';
+        else if (valor <= 60) sugerencia = 'Consulta extendida';
+        else if (valor <= 120) sugerencia = 'Procedimiento menor';
+        else sugerencia = 'Procedimiento mayor';
+        
+        // Mostrar sugerencia temporalmente
+        const formText = this.parentElement.nextElementSibling;
+        if (formText && formText.classList.contains('form-text')) {
+            const textoOriginal = formText.textContent;
+            formText.textContent = `${textoOriginal} - ${sugerencia}`;
+            
+            setTimeout(() => {
+                formText.textContent = textoOriginal;
+            }, 2000);
+        }
+    }
+});
+</script>
+{% endblock %}

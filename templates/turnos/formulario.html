@@ -1,0 +1,365 @@
+{% extends "base.html" %}
+
+{% block title %}
+    {% if turno %}Editar Turno{% else %}Nuevo Turno{% endif %} - Consultorio Médico
+{% endblock %}
+
+{% block page_title %}
+    {% if turno %}Editar Turno{% else %}Programar Nuevo Turno{% endif %}
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-10">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-{% if turno %}edit{% else %}calendar-plus{% endif %}"></i>
+                    {% if turno %}Editar Turno - {{ turno.fecha.strftime('%d/%m/%Y') }} {{ turno.hora.strftime('%H:%M') }}{% else %}Programar Nuevo Turno{% endif %}
+                </h5>
+            </div>
+            <div class="card-body">
+                <form id="formTurno" method="POST" 
+                      action="{% if turno %}{{ url_for('turnos.actualizar', id=turno.id) }}{% else %}{{ url_for('turnos.crear') }}{% endif %}">
+                    
+                    <div class="row">
+                        <!-- Fecha -->
+                        <div class="col-md-4 mb-3">
+                            <label for="fecha" class="form-label">
+                                <i class="fas fa-calendar"></i> Fecha <span class="text-danger">*</span>
+                            </label>
+                            <input type="date" class="form-control" id="fecha" name="fecha" 
+                                   value="{{ turno.fecha.isoformat() if turno else '' }}" required
+                                   min="{{ "now"|date('%Y-%m-%d') }}">
+                            <div class="invalid-feedback"></div>
+                        </div>
+
+                        <!-- Hora -->
+                        <div class="col-md-4 mb-3">
+                            <label for="hora" class="form-label">
+                                <i class="fas fa-clock"></i> Hora <span class="text-danger">*</span>
+                            </label>
+                            <select class="form-select" id="hora" name="hora" required>
+                                <option value="">Seleccione una hora</option>
+                            </select>
+                            <div class="form-text">Horarios disponibles según el médico</div>
+                            <div class="invalid-feedback"></div>
+                        </div>
+
+                        <!-- Estado -->
+                        <div class="col-md-4 mb-3">
+                            <label for="estado" class="form-label">
+                                <i class="fas fa-flag"></i> Estado
+                            </label>
+                            <select class="form-select" id="estado" name="estado">
+                                <option value="pendiente" {% if not turno or turno.estado == 'pendiente' %}selected{% endif %}>Pendiente</option>
+                                <option value="confirmado" {% if turno and turno.estado == 'confirmado' %}selected{% endif %}>Confirmado</option>
+                                {% if turno %}
+                                    <option value="completado" {% if turno.estado == 'completado' %}selected{% endif %}>Completado</option>
+                                    <option value="cancelado" {% if turno.estado == 'cancelado' %}selected{% endif %}>Cancelado</option>
+                                {% endif %}
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <!-- Paciente -->
+                        <div class="col-md-4 mb-3">
+                            <label for="cliente_id" class="form-label">
+                                <i class="fas fa-user"></i> Paciente <span class="text-danger">*</span>
+                            </label>
+                            <select class="form-select" id="cliente_id" name="cliente_id" required>
+                                <option value="">Seleccione un paciente</option>
+                                {% for cliente in clientes %}
+                                    <option value="{{ cliente.id }}" 
+                                            {% if turno and turno.cliente_id == cliente.id %}selected{% endif %}
+                                            {% if request.args.get('cliente_id') == cliente.id|string %}selected{% endif %}>
+                                        {{ cliente.nombre_completo }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                            <div class="invalid-feedback"></div>
+                        </div>
+
+                        <!-- Médico -->
+                        <div class="col-md-4 mb-3">
+                            <label for="profesional_id" class="form-label">
+                                <i class="fas fa-user-md"></i> Médico <span class="text-danger">*</span>
+                            </label>
+                            <select class="form-select" id="profesional_id" name="profesional_id" required>
+                                <option value="">Seleccione un médico</option>
+                                {% for profesional in profesionales %}
+                                    <option value="{{ profesional.id }}" 
+                                            {% if turno and turno.profesional_id == profesional.id %}selected{% endif %}
+                                            {% if request.args.get('profesional_id') == profesional.id|string %}selected{% endif %}>
+                                        {{ profesional.nombre_completo }} - {{ profesional.especialidad or 'General' }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                            <div class="invalid-feedback"></div>
+                        </div>
+
+                        <!-- Servicio -->
+                        <div class="col-md-4 mb-3">
+                            <label for="servicio_id" class="form-label">
+                                <i class="fas fa-medical-bag"></i> Servicio <span class="text-danger">*</span>
+                            </label>
+                            <select class="form-select" id="servicio_id" name="servicio_id" required>
+                                <option value="">Seleccione un servicio</option>
+                                {% for servicio in servicios %}
+                                    <option value="{{ servicio.id }}" 
+                                            data-duracion="{{ servicio.duracion }}"
+                                            data-precio="{{ servicio.precio }}"
+                                            {% if turno and turno.servicio_id == servicio.id %}selected{% endif %}
+                                            {% if request.args.get('servicio_id') == servicio.id|string %}selected{% endif %}>
+                                        {{ servicio.nombre }} - ${{ servicio.precio }} ({{ servicio.duracion }}min)
+                                    </option>
+                                {% endfor %}
+                            </select>
+                            <div class="invalid-feedback"></div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <!-- Precio final -->
+                        <div class="col-md-6 mb-3">
+                            <label for="precio_final" class="form-label">
+                                <i class="fas fa-dollar-sign"></i> Precio Final
+                            </label>
+                            <div class="input-group">
+                                <span class="input-group-text">$</span>
+                                <input type="number" class="form-control" id="precio_final" name="precio_final" 
+                                       value="{{ turno.precio_final if turno and turno.precio_final else '' }}" 
+                                       min="0" step="0.01" placeholder="Precio del servicio">
+                            </div>
+                            <div class="form-text">Opcional: deje vacío para usar el precio del servicio</div>
+                        </div>
+
+                        <!-- Información del servicio -->
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">
+                                <i class="fas fa-info-circle"></i> Información del Servicio
+                            </label>
+                            <div class="form-control-plaintext bg-light rounded p-2">
+                                <div id="infoServicio">
+                                    <small class="text-muted">Seleccione un servicio para ver la información</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <!-- Observaciones -->
+                        <div class="col-md-12 mb-3">
+                            <label for="observaciones" class="form-label">
+                                <i class="fas fa-sticky-note"></i> Observaciones
+                            </label>
+                            <textarea class="form-control" id="observaciones" name="observaciones" rows="3"
+                                      placeholder="Notas adicionales sobre el turno...">{{ turno.observaciones if turno else '' }}</textarea>
+                        </div>
+                    </div>
+
+                    <!-- Vista previa del turno -->
+                    <div class="row mb-3">
+                        <div class="col-12">
+                            <div class="card bg-light">
+                                <div class="card-body">
+                                    <h6 class="card-title">
+                                        <i class="fas fa-eye"></i> Resumen del Turno
+                                    </h6>
+                                    <div class="row">
+                                        <div class="col-md-3">
+                                            <strong>Fecha y Hora:</strong><br>
+                                            <span id="resumenFechaHora" class="text-muted">-</span>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <strong>Paciente:</strong><br>
+                                            <span id="resumenPaciente" class="text-muted">-</span>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <strong>Médico:</strong><br>
+                                            <span id="resumenMedico" class="text-muted">-</span>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <strong>Servicio y Precio:</strong><br>
+                                            <span id="resumenServicio" class="text-muted">-</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Botones de acción -->
+                    <div class="row">
+                        <div class="col-12">
+                            <div class="d-flex justify-content-between">
+                                <a href="{{ url_for('turnos.listar') }}" class="btn btn-secondary">
+                                    <i class="fas fa-arrow-left"></i> Volver a la Lista
+                                </a>
+                                
+                                <div>
+                                    {% if turno %}
+                                        <a href="{{ url_for('turnos.detalle', id=turno.id) }}" class="btn btn-outline-info me-2">
+                                            <i class="fas fa-eye"></i> Ver Detalle
+                                        </a>
+                                    {% endif %}
+                                    
+                                    <button type="button" class="btn btn-outline-warning me-2" onclick="limpiarFormulario()">
+                                        <i class="fas fa-eraser"></i> Limpiar
+                                    </button>
+                                    
+                                    <button type="submit" class="btn btn-success" id="btnGuardar">
+                                        <i class="fas fa-save"></i> 
+                                        {% if turno %}Actualizar Turno{% else %}Programar Turno{% endif %}
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Actualizar resumen cuando cambian los campos
+    ['fecha', 'hora', 'cliente_id', 'profesional_id', 'servicio_id', 'precio_final'].forEach(id => {
+        const campo = document.getElementById(id);
+        if (campo) {
+            campo.addEventListener('change', actualizarResumen);
+        }
+    });
+
+    // Cargar horarios cuando cambia fecha o médico
+    ['fecha', 'profesional_id', 'servicio_id'].forEach(id => {
+        const campo = document.getElementById(id);
+        if (campo) {
+            campo.addEventListener('change', cargarHorariosDisponibles);
+        }
+    });
+
+    // Actualizar información del servicio
+    document.getElementById('servicio_id').addEventListener('change', actualizarInfoServicio);
+
+    // Actualizar resumen inicial
+    actualizarResumen();
+    actualizarInfoServicio();
+    
+    // Cargar horarios inicial si hay datos
+    if (document.getElementById('fecha').value && document.getElementById('profesional_id').value) {
+        cargarHorariosDisponibles();
+    }
+});
+
+function actualizarResumen() {
+    const fecha = document.getElementById('fecha').value;
+    const hora = document.getElementById('hora').value;
+    const clienteSelect = document.getElementById('cliente_id');
+    const profesionalSelect = document.getElementById('profesional_id');
+    const servicioSelect = document.getElementById('servicio_id');
+    const precioFinal = document.getElementById('precio_final').value;
+
+    // Fecha y hora
+    let fechaHora = '-';
+    if (fecha && hora) {
+        const fechaObj = new Date(fecha + 'T' + hora);
+        fechaHora = fechaObj.toLocaleDateString('es-AR') + ' ' + hora;
+    } else if (fecha) {
+        fechaHora = new Date(fecha).toLocaleDateString('es-AR') + ' (hora pendiente)';
+    }
+    document.getElementById('resumenFechaHora').textContent = fechaHora;
+
+    // Paciente
+    const paciente = clienteSelect.selectedOptions[0]?.text || '-';
+    document.getElementById('resumenPaciente').textContent = paciente;
+
+    // Médico
+    const medico = profesionalSelect.selectedOptions[0]?.text || '-';
+    document.getElementById('resumenMedico').textContent = medico;
+
+    // Servicio y precio
+    let servicioTexto = '-';
+    if (servicioSelect.value) {
+        const servicioOption = servicioSelect.selectedOptions[0];
+        const precioServicio = servicioOption.getAttribute('data-precio');
+        const precio = precioFinal || precioServicio;
+        servicioTexto = servicioOption.text.split(' - ')[0] + ` - $${precio}`;
+    }
+    document.getElementById('resumenServicio').textContent = servicioTexto;
+}
+
+function actualizarInfoServicio() {
+    const servicioSelect = document.getElementById('servicio_id');
+    const infoDiv = document.getElementById('infoServicio');
+    const precioInput = document.getElementById('precio_final');
+
+    if (servicioSelect.value) {
+        const option = servicioSelect.selectedOptions[0];
+        const duracion = option.getAttribute('data-duracion');
+        const precio = option.getAttribute('data-precio');
+        
+        infoDiv.innerHTML = `
+            <div class="d-flex justify-content-between">
+                <span><i class="fas fa-clock"></i> Duración: ${duracion} minutos</span>
+                <span><i class="fas fa-dollar-sign"></i> Precio: $${precio}</span>
+            </div>
+        `;
+
+        // Autocompletar precio si está vacío
+        if (!precioInput.value) {
+            precioInput.value = precio;
+        }
+    } else {
+        infoDiv.innerHTML = '<small class="text-muted">Seleccione un servicio para ver la información</small>';
+    }
+}
+
+function cargarHorariosDisponibles() {
+    const fecha = document.getElementById('fecha').value;
+    const profesionalId = document.getElementById('profesional_id').value;
+    const servicioId = document.getElementById('servicio_id').value;
+    const horaSelect = document.getElementById('hora');
+    
+    // Limpiar opciones actuales
+    horaSelect.innerHTML = '<option value="">Seleccione una hora</option>';
+    
+    if (!fecha || !profesionalId) {
+        return;
+    }
+    
+    // Mostrar indicador de carga
+    horaSelect.disabled = true;
+    horaSelect.innerHTML = '<option value="">Cargando horarios...</option>';
+    
+    // Realizar petición AJAX para obtener horarios disponibles
+    fetch(`/turnos/horarios-disponibles?fecha=${fecha}&profesional_id=${profesionalId}&servicio_id=${servicioId}`)
+        .then(response => response.json())
+        .then(data => {
+            horaSelect.innerHTML = '<option value="">Seleccione una hora</option>';
+            
+            if (data.horarios && data.horarios.length > 0) {
+                data.horarios.forEach(hora => {
+                    const option = document.createElement('option');
+                    option.value = hora;
+                    option.textContent = hora;
+                    horaSelect.appendChild(option);
+                });
+            } else {
+                horaSelect.innerHTML = '<option value="">No hay horarios disponibles</option>';
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            horaSelect.innerHTML = '<option value="">Error al cargar horarios</option>';
+        })
+        .finally(() => {
+            horaSelect.disabled = false;
+        });
+}
+</script>
+{% endblock %}

@@ -1,0 +1,419 @@
+{% extends "base.html" %}
+
+{% block title %}
+    {% if cliente %}Editar Paciente{% else %}Nuevo Paciente{% endif %} - Consultorio Médico
+{% endblock %}
+
+{% block page_title %}
+    {% if cliente %}Editar Paciente{% else %}Nuevo Paciente{% endif %}
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-{% if cliente %}edit{% else %}plus{% endif %}"></i>
+                    {% if cliente %}Editar Paciente - {{ cliente.nombre_completo }}{% else %}Agregar Nuevo Paciente{% endif %}
+                </h5>
+            </div>
+            <div class="card-body">
+                <form id="formCliente" method="POST" 
+                      action="{% if cliente %}{{ url_for('clientes.actualizar', id=cliente.id) }}{% else %}{{ url_for('clientes.crear') }}{% endif %}">
+                    
+                    <div class="row">
+                        <!-- Nombre -->
+                        <div class="col-md-6 mb-3">
+                            <label for="nombre" class="form-label">
+                                <i class="fas fa-user"></i> Nombre <span class="text-danger">*</span>
+                            </label>
+                            <input type="text" class="form-control" id="nombre" name="nombre" 
+                                   value="{{ cliente.nombre if cliente else '' }}" required>
+                            <div class="invalid-feedback"></div>
+                        </div>
+
+                        <!-- Apellido -->
+                        <div class="col-md-6 mb-3">
+                            <label for="apellido" class="form-label">
+                                <i class="fas fa-user"></i> Apellido <span class="text-danger">*</span>
+                            </label>
+                            <input type="text" class="form-control" id="apellido" name="apellido" 
+                                   value="{{ cliente.apellido if cliente else '' }}" required>
+                            <div class="invalid-feedback"></div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <!-- Teléfono -->
+                        <div class="col-md-6 mb-3">
+                            <label for="telefono" class="form-label">
+                                <i class="fas fa-phone"></i> Teléfono
+                            </label>
+                            <input type="tel" class="form-control" id="telefono" name="telefono" 
+                                   value="{{ cliente.telefono if cliente and cliente.telefono else '' }}"
+                                   placeholder="+54 9 11 1234-5678">
+                            <div class="form-text">Formato: +54 9 XX XXXX-XXXX (opcional)</div>
+                            <div class="invalid-feedback"></div>
+                        </div>
+
+                        <!-- Email -->
+                        <div class="col-md-6 mb-3">
+                            <label for="email" class="form-label">
+                                <i class="fas fa-envelope"></i> Email
+                            </label>
+                            <input type="email" class="form-control" id="email" name="email" 
+                                   value="{{ cliente.email if cliente and cliente.email else '' }}"
+                                   placeholder="ejemplo@email.com">
+                            <div class="form-text">Para envío de recordatorios (opcional)</div>
+                            <div class="invalid-feedback"></div>
+                        </div>
+                    </div>
+
+                    <!-- Vista previa de la información -->
+                    <div class="row mb-3">
+                        <div class="col-12">
+                            <div class="card bg-light">
+                                <div class="card-body">
+                                    <h6 class="card-title">
+                                        <i class="fas fa-eye"></i> Vista Previa
+                                    </h6>
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <strong>Nombre Completo:</strong><br>
+                                            <span id="previewNombre" class="text-muted">-</span>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <strong>Contacto:</strong><br>
+                                            <span id="previewContacto" class="text-muted">-</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Botones de acción -->
+                    <div class="row">
+                        <div class="col-12">
+                            <div class="d-flex justify-content-between">
+                                <a href="{{ url_for('clientes.listar') }}" class="btn btn-secondary">
+                                    <i class="fas fa-arrow-left"></i> Volver a la Lista
+                                </a>
+                                
+                                <div>
+                                    {% if cliente %}
+                                        <a href="{{ url_for('clientes.detalle', id=cliente.id) }}" class="btn btn-outline-info me-2">
+                                            <i class="fas fa-eye"></i> Ver Detalle
+                                        </a>
+                                    {% endif %}
+                                    
+                                    <button type="button" class="btn btn-outline-warning me-2" onclick="limpiarFormulario()">
+                                        <i class="fas fa-eraser"></i> Limpiar
+                                    </button>
+                                    
+                                    <button type="submit" class="btn btn-success" id="btnGuardar">
+                                        <i class="fas fa-save"></i> 
+                                        {% if cliente %}Actualizar Paciente{% else %}Guardar Paciente{% endif %}
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Información adicional -->
+        <div class="card mt-4">
+            <div class="card-header">
+                <h6 class="card-title mb-0">
+                    <i class="fas fa-info-circle"></i> Información Importante
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6><i class="fas fa-check-circle text-success"></i> Campos Obligatorios</h6>
+                        <ul class="list-unstyled">
+                            <li><i class="fas fa-dot-circle fa-xs"></i> Nombre</li>
+                            <li><i class="fas fa-dot-circle fa-xs"></i> Apellido</li>
+                        </ul>
+                    </div>
+                    <div class="col-md-6">
+                        <h6><i class="fas fa-shield-alt text-info"></i> Privacidad</h6>
+                        <p class="small text-muted">
+                            Los datos del paciente están protegidos y solo serán utilizados 
+                            para fines médicos y administrativos del consultorio.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {% if cliente %}
+        <!-- Historial del paciente -->
+        <div class="card mt-4">
+            <div class="card-header">
+                <h6 class="card-title mb-0">
+                    <i class="fas fa-history"></i> Información del Registro
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <strong>Fecha de Registro:</strong><br>
+                        <span class="text-muted">
+                            {{ cliente.fecha_creacion.strftime('%d/%m/%Y a las %H:%M') if cliente.fecha_creacion else 'No disponible' }}
+                        </span>
+                    </div>
+                    <div class="col-md-6">
+                        <strong>ID del Paciente:</strong><br>
+                        <span class="badge bg-secondary">#{{ cliente.id }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Validación en tiempo real y vista previa
+document.addEventListener('DOMContentLoaded', function() {
+    const campos = {
+        nombre: document.getElementById('nombre'),
+        apellido: document.getElementById('apellido'),
+        telefono: document.getElementById('telefono'),
+        email: document.getElementById('email')
+    };
+
+    // Actualizar vista previa cuando cambian los campos
+    Object.values(campos).forEach(campo => {
+        campo.addEventListener('input', actualizarVistaPrevia);
+        campo.addEventListener('blur', validarCampo);
+    });
+
+    // Actualizar vista previa inicial
+    actualizarVistaPrevia();
+});
+
+function actualizarVistaPrevia() {
+    const nombre = document.getElementById('nombre').value.trim();
+    const apellido = document.getElementById('apellido').value.trim();
+    const telefono = document.getElementById('telefono').value.trim();
+    const email = document.getElementById('email').value.trim();
+
+    // Nombre completo
+    const nombreCompleto = [nombre, apellido].filter(x => x).join(' ') || 'Sin nombre';
+    document.getElementById('previewNombre').textContent = nombreCompleto;
+
+    // Contacto
+    const contactos = [];
+    if (telefono) contactos.push(`📞 ${telefono}`);
+    if (email) contactos.push(`📧 ${email}`);
+    
+    document.getElementById('previewContacto').textContent = 
+        contactos.length > 0 ? contactos.join(' | ') : 'Sin datos de contacto';
+}
+
+function validarCampo(event) {
+    const campo = event.target;
+    const valor = campo.value.trim();
+    
+    // Limpiar validaciones previas
+    campo.classList.remove('is-valid', 'is-invalid');
+    const feedback = campo.nextElementSibling;
+    if (feedback && feedback.classList.contains('invalid-feedback')) {
+        feedback.textContent = '';
+    }
+
+    // Validaciones específicas
+    switch (campo.id) {
+        case 'nombre':
+        case 'apellido':
+            if (!valor) {
+                mostrarError(campo, 'Este campo es obligatorio');
+                return false;
+            }
+            if (valor.length < 2) {
+                mostrarError(campo, 'Debe tener al menos 2 caracteres');
+                return false;
+            }
+            break;
+
+        case 'telefono':
+            if (valor && !validarTelefono(valor)) {
+                mostrarError(campo, 'Formato de teléfono no válido');
+                return false;
+            }
+            break;
+
+        case 'email':
+            if (valor && !validarEmail(valor)) {
+                mostrarError(campo, 'Formato de email no válido');
+                return false;
+            }
+            break;
+    }
+
+    // Campo válido
+    campo.classList.add('is-valid');
+    return true;
+}
+
+function mostrarError(campo, mensaje) {
+    campo.classList.add('is-invalid');
+    const feedback = campo.nextElementSibling;
+    if (feedback && feedback.classList.contains('invalid-feedback')) {
+        feedback.textContent = mensaje;
+    }
+}
+
+function validarTelefono(telefono) {
+    // Acepta varios formatos de teléfono argentino
+    const patterns = [
+        /^\+54\s?9?\s?\d{2,4}\s?\d{4}-?\d{4}$/,  // +54 9 11 1234-5678
+        /^\d{2,4}\s?\d{4}-?\d{4}$/,               // 11 1234-5678
+        /^\d{8,10}$/                              // 1112345678
+    ];
+    
+    return patterns.some(pattern => pattern.test(telefono));
+}
+
+function validarEmail(email) {
+    const pattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return pattern.test(email);
+}
+
+function limpiarFormulario() {
+    if (confirm('¿Está seguro de que desea limpiar todos los campos?')) {
+        document.getElementById('formCliente').reset();
+        
+        // Limpiar validaciones
+        document.querySelectorAll('.is-valid, .is-invalid').forEach(el => {
+            el.classList.remove('is-valid', 'is-invalid');
+        });
+        
+        // Actualizar vista previa
+        actualizarVistaPrevia();
+        
+        // Focus en primer campo
+        document.getElementById('nombre').focus();
+    }
+}
+
+// Envío del formulario
+document.getElementById('formCliente').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    // Validar todos los campos
+    const campos = ['nombre', 'apellido', 'telefono', 'email'];
+    let todoValido = true;
+    
+    campos.forEach(id => {
+        const campo = document.getElementById(id);
+        if (!validarCampo({target: campo})) {
+            todoValido = false;
+        }
+    });
+    
+    if (!todoValido) {
+        alert('Por favor, corrija los errores en el formulario');
+        return;
+    }
+    
+    // Mostrar loading
+    const btnGuardar = document.getElementById('btnGuardar');
+    const textoOriginal = btnGuardar.innerHTML;
+    btnGuardar.innerHTML = '<span class="loading"></span> Guardando...';
+    btnGuardar.disabled = true;
+    
+    // Enviar formulario
+    const formData = new FormData(this);
+    const url = this.action;
+    
+    fetch(url, {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
+    .then(response => {
+        if (response.redirected) {
+            window.location.href = response.url;
+        } else {
+            return response.json();
+        }
+    })
+    .then(data => {
+        if (data && data.success) {
+            // Éxito - redirigir
+            window.location.href = "{{ url_for('clientes.listar') }}";
+        } else if (data && data.error) {
+            // Error del servidor
+            alert('Error: ' + data.error);
+            btnGuardar.innerHTML = textoOriginal;
+            btnGuardar.disabled = false;
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error de conexión. Por favor, intente nuevamente.');
+        btnGuardar.innerHTML = textoOriginal;
+        btnGuardar.disabled = false;
+    });
+});
+
+// Formateo automático del teléfono
+document.getElementById('telefono').addEventListener('input', function(e) {
+    let valor = e.target.value.replace(/\D/g, ''); // Solo números
+    
+    if (valor.startsWith('549')) {
+        // Formato: +54 9 XX XXXX-XXXX
+        valor = valor.substring(3);
+        if (valor.length >= 2) {
+            valor = `+54 9 ${valor.substring(0, 2)}${valor.length > 2 ? ' ' + valor.substring(2, 6) : ''}${valor.length > 6 ? '-' + valor.substring(6, 10) : ''}`;
+        }
+    } else if (valor.startsWith('54')) {
+        // Formato: +54 XX XXXX-XXXX
+        valor = valor.substring(2);
+        if (valor.length >= 2) {
+            valor = `+54 ${valor.substring(0, 2)}${valor.length > 2 ? ' ' + valor.substring(2, 6) : ''}${valor.length > 6 ? '-' + valor.substring(6, 10) : ''}`;
+        }
+    } else if (valor.length > 0) {
+        // Formato local: XX XXXX-XXXX
+        if (valor.length >= 2) {
+            valor = `${valor.substring(0, 2)}${valor.length > 2 ? ' ' + valor.substring(2, 6) : ''}${valor.length > 6 ? '-' + valor.substring(6, 10) : ''}`;
+        }
+    }
+    
+    e.target.value = valor;
+});
+
+// Capitalizar nombres automáticamente
+function capitalizarNombre(input) {
+    input.addEventListener('input', function(e) {
+        const words = e.target.value.toLowerCase().split(' ');
+        const capitalizedWords = words.map(word => {
+            if (word.length > 0) {
+                // No capitalizar preposiciones comunes
+                const preposiciones = ['de', 'del', 'la', 'el', 'y', 'e'];
+                if (preposiciones.includes(word)) {
+                    return word;
+                }
+                return word.charAt(0).toUpperCase() + word.slice(1);
+            }
+            return word;
+        });
+        e.target.value = capitalizedWords.join(' ');
+    });
+}
+
+capitalizarNombre(document.getElementById('nombre'));
+capitalizarNombre(document.getElementById('apellido'));
+</script>
+{% endblock %}

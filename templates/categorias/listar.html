@@ -1,0 +1,231 @@
+{% extends "base.html" %}
+
+{% block title %}Categorías - Consultorio Médico{% endblock %}
+{% block page_title %}Gestión de Categorías{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>
+        <i class="fas fa-tags"></i> Categorías de Servicios
+    </h2>
+    <div>
+        <a href="{{ url_for('categorias.nueva') }}" class="btn btn-primary">
+            <i class="fas fa-plus"></i> Nueva Categoría
+        </a>
+    </div>
+</div>
+
+<!-- Lista de categorías -->
+<div class="row">
+    {% if categorias and categorias.items %}
+        {% for categoria in categorias.items %}
+        <div class="col-md-6 col-lg-4 mb-4">
+            <div class="card categoria-card h-100" style="border-left: 4px solid {{ categoria.color }};">
+                <div class="card-header d-flex justify-content-between align-items-center" 
+                     style="background-color: {{ categoria.color }}20;">
+                    <h6 class="card-title mb-0" style="color: {{ categoria.color }};">
+                        <i class="fas fa-tag"></i> {{ categoria.nombre }}
+                    </h6>
+                    <div class="dropdown">
+                        <button class="btn btn-sm btn-outline-secondary" type="button" data-bs-toggle="dropdown">
+                            <i class="fas fa-ellipsis-v"></i>
+                        </button>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="{{ url_for('categorias.editar', id=categoria.id) }}">
+                                <i class="fas fa-edit"></i> Editar
+                            </a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('servicios.por_categoria', categoria_id=categoria.id) }}">
+                                <i class="fas fa-list"></i> Ver Servicios
+                            </a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item text-danger" href="#" onclick="eliminarCategoria({{ categoria.id }}, '{{ categoria.nombre }}')">
+                                <i class="fas fa-trash"></i> Eliminar
+                            </a></li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="card-body">
+                    {% if categoria.descripcion %}
+                        <p class="card-text">{{ categoria.descripcion }}</p>
+                    {% else %}
+                        <p class="card-text text-muted">Sin descripción</p>
+                    {% endif %}
+                    
+                    <div class="categoria-stats mt-3">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span class="text-muted">
+                                <i class="fas fa-medical-bag"></i> Servicios:
+                            </span>
+                            <span class="badge bg-secondary">{{ categoria.servicios|length }}</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer bg-transparent">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <small class="text-muted">ID: #{{ categoria.id }}</small>
+                        <div class="btn-group btn-group-sm">
+                            <a href="{{ url_for('categorias.editar', id=categoria.id) }}" 
+                               class="btn btn-outline-warning" title="Editar">
+                                <i class="fas fa-edit"></i>
+                            </a>
+                            <a href="{{ url_for('servicios.por_categoria', categoria_id=categoria.id) }}" 
+                               class="btn btn-outline-info" title="Ver servicios">
+                                <i class="fas fa-list"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    {% else %}
+        <div class="col-12">
+            <div class="text-center py-5">
+                <i class="fas fa-tags fa-4x text-muted mb-3"></i>
+                <h4 class="text-muted">No hay categorías registradas</h4>
+                <p class="text-muted">Las categorías ayudan a organizar mejor los servicios médicos</p>
+                <a href="{{ url_for('categorias.nueva') }}" class="btn btn-primary">
+                    <i class="fas fa-plus"></i> Crear Primera Categoría
+                </a>
+            </div>
+        </div>
+    {% endif %}
+</div>
+
+<!-- Paginación -->
+{% if categorias and categorias.pages > 1 %}
+<div class="d-flex justify-content-center mt-4">
+    <nav aria-label="Paginación de categorías">
+        <ul class="pagination">
+            {% if categorias.has_prev %}
+                <li class="page-item">
+                    <a class="page-link" href="{{ url_for('categorias.listar', page=categorias.prev_num) }}">
+                        <i class="fas fa-chevron-left"></i> Anterior
+                    </a>
+                </li>
+            {% endif %}
+
+            {% for page_num in categorias.iter_pages() %}
+                {% if page_num %}
+                    {% if page_num != categorias.page %}
+                        <li class="page-item">
+                            <a class="page-link" href="{{ url_for('categorias.listar', page=page_num) }}">
+                                {{ page_num }}
+                            </a>
+                        </li>
+                    {% else %}
+                        <li class="page-item active">
+                            <span class="page-link">{{ page_num }}</span>
+                        </li>
+                    {% endif %}
+                {% else %}
+                    <li class="page-item disabled">
+                        <span class="page-link">...</span>
+                    </li>
+                {% endif %}
+            {% endfor %}
+
+            {% if categorias.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="{{ url_for('categorias.listar', page=categorias.next_num) }}">
+                        Siguiente <i class="fas fa-chevron-right"></i>
+                    </a>
+                </li>
+            {% endif %}
+        </ul>
+    </nav>
+</div>
+{% endif %}
+
+<!-- Modal de confirmación para eliminar -->
+<div class="modal fade" id="modalEliminar" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-exclamation-triangle text-warning"></i> Confirmar Eliminación
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>¿Está seguro de que desea eliminar la categoría <strong id="nombreCategoria"></strong>?</p>
+                <div class="alert alert-warning">
+                    <i class="fas fa-info-circle"></i>
+                    Esta acción eliminará la categoría pero no afectará los servicios asociados.
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-danger" id="confirmarEliminar">
+                    <i class="fas fa-trash"></i> Eliminar Categoría
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.categoria-card {
+    transition: transform 0.3s, box-shadow 0.3s;
+    border: 1px solid #dee2e6;
+}
+
+.categoria-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+}
+
+.categoria-stats {
+    border-top: 1px solid #eee;
+    padding-top: 0.75rem;
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let categoriaIdEliminar = null;
+
+function eliminarCategoria(id, nombre) {
+    categoriaIdEliminar = id;
+    document.getElementById('nombreCategoria').textContent = nombre;
+    
+    const modal = new bootstrap.Modal(document.getElementById('modalEliminar'));
+    modal.show();
+}
+
+document.getElementById('confirmarEliminar').addEventListener('click', function() {
+    if (categoriaIdEliminar) {
+        this.innerHTML = '<span class="loading"></span> Eliminando...';
+        this.disabled = true;
+        
+        fetch(`/categorias/${categoriaIdEliminar}/eliminar`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                bootstrap.Modal.getInstance(document.getElementById('modalEliminar')).hide();
+                window.location.reload();
+            } else {
+                alert('Error al eliminar categoría: ' + data.error);
+                this.innerHTML = '<i class="fas fa-trash"></i> Eliminar Categoría';
+                this.disabled = false;
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error de conexión al eliminar categoría');
+            this.innerHTML = '<i class="fas fa-trash"></i> Eliminar Categoría';
+            this.disabled = false;
+        });
+    }
+});
+</script>
+{% endblock %}

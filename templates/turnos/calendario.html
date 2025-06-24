@@ -1,0 +1,215 @@
+{% extends "base.html" %}
+
+{% block title %}Calendario de Turnos - Consultorio Médico{% endblock %}
+{% block page_title %}Calendario de Turnos{% endblock %}
+
+{% block content %}
+<!-- Controles del calendario -->
+<div class="row mb-4">
+    <div class="col-md-8">
+        <div class="d-flex align-items-center">
+            <h2 class="mb-0 me-4">
+                <i class="fas fa-calendar-alt"></i> Calendario de Turnos
+            </h2>
+            <div class="btn-group me-3" role="group">
+                <button type="button" class="btn btn-outline-secondary" onclick="cambiarVista('day')" id="btnDia">
+                    <i class="fas fa-calendar-day"></i> Día
+                </button>
+                <button type="button" class="btn btn-outline-secondary active" onclick="cambiarVista('week')" id="btnSemana">
+                    <i class="fas fa-calendar-week"></i> Semana
+                </button>
+                <button type="button" class="btn btn-outline-secondary" onclick="cambiarVista('month')" id="btnMes">
+                    <i class="fas fa-calendar"></i> Mes
+                </button>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4 text-end">
+        <a href="{{ url_for('turnos.nuevo') }}" class="btn btn-primary">
+            <i class="fas fa-plus"></i> Nuevo Turno
+        </a>
+        <div class="btn-group ms-2">
+            <button type="button" class="btn btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown">
+                <i class="fas fa-filter"></i> Filtros
+            </button>
+            <ul class="dropdown-menu">
+                <li><h6 class="dropdown-header">Médicos</h6></li>
+                <li><a class="dropdown-item" href="#" onclick="filtrarPorMedico(null)">
+                    <i class="fas fa-users"></i> Todos los médicos
+                </a></li>
+                {% for profesional in profesionales %}
+                <li><a class="dropdown-item" href="#" onclick="filtrarPorMedico({{ profesional.id }})">
+                    <i class="fas fa-user-md"></i> {{ profesional.nombre_completo }}
+                </a></li>
+                {% endfor %}
+                <li><hr class="dropdown-divider"></li>
+                <li><h6 class="dropdown-header">Estados</h6></li>
+                <li><a class="dropdown-item" href="#" onclick="filtrarPorEstado('todos')">
+                    <i class="fas fa-list"></i> Todos los estados
+                </a></li>
+                <li><a class="dropdown-item" href="#" onclick="filtrarPorEstado('pendiente')">
+                    <span class="badge status-pendiente">Pendientes</span>
+                </a></li>
+                <li><a class="dropdown-item" href="#" onclick="filtrarPorEstado('confirmado')">
+                    <span class="badge status-confirmado">Confirmados</span>
+                </a></li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+<!-- Navegación del calendario -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="calendar-navigation d-flex justify-content-between align-items-center">
+            <div>
+                <button class="btn btn-outline-primary" onclick="navegarCalendario('prev')">
+                    <i class="fas fa-chevron-left"></i> Anterior
+                </button>
+                <button class="btn btn-outline-secondary mx-2" onclick="irAHoy()">
+                    <i class="fas fa-calendar-day"></i> Hoy
+                </button>
+                <button class="btn btn-outline-primary" onclick="navegarCalendario('next')">
+                    Siguiente <i class="fas fa-chevron-right"></i>
+                </button>
+            </div>
+            <div>
+                <h4 class="mb-0" id="fechaActual">{{ fecha|date('%B %Y')|title }}</h4>
+            </div>
+            <div>
+                <input type="date" class="form-control" id="fechaSelector" 
+                       value="{{ fecha }}" onchange="irAFecha(this.value)">
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Vista del calendario -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body p-0">
+                <!-- Vista Semanal (por defecto) -->
+                <div id="vistaSemanl" class="calendar-view">
+                    <div class="table-responsive">
+                        <table class="table table-bordered calendar-table mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th width="100" class="text-center">Hora</th>
+                                    <th class="text-center">Lunes</th>
+                                    <th class="text-center">Martes</th>
+                                    <th class="text-center">Miércoles</th>
+                                    <th class="text-center">Jueves</th>
+                                    <th class="text-center">Viernes</th>
+                                    <th class="text-center">Sábado</th>
+                                    <th class="text-center">Domingo</th>
+                                </tr>
+                            </thead>
+                            <tbody id="calendarioSemanal">
+                                <!-- Generado dinámicamente por JavaScript -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Vista Diaria -->
+                <div id="vistaDiaria" class="calendar-view" style="display: none;">
+                    <div class="daily-header text-center mb-3 p-3 bg-light">
+                        <h5 class="mb-0" id="fechaDiaria">{{ fecha|date('%A, %d de %B de %Y')|title }}</h5>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-bordered">
+                            <thead class="table-light">
+                                <tr>
+                                    <th width="100">Hora</th>
+                                    <th>Turnos</th>
+                                </tr>
+                            </thead>
+                            <tbody id="calendarioDiario">
+                                <!-- Generado dinámicamente por JavaScript -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Vista Mensual -->
+                <div id="vistaMensual" class="calendar-view" style="display: none;">
+                    <div class="table-responsive">
+                        <table class="table table-bordered calendar-month">
+                            <thead class="table-light">
+                                <tr>
+                                    <th class="text-center">Dom</th>
+                                    <th class="text-center">Lun</th>
+                                    <th class="text-center">Mar</th>
+                                    <th class="text-center">Mié</th>
+                                    <th class="text-center">Jue</th>
+                                    <th class="text-center">Vie</th>
+                                    <th class="text-center">Sáb</th>
+                                </tr>
+                            </thead>
+                            <tbody id="calendarioMensual">
+                                <!-- Generado dinámicamente por JavaScript -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Leyenda -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body">
+                <h6 class="card-title">
+                    <i class="fas fa-info-circle"></i> Leyenda
+                </h6>
+                <div class="row">
+                    <div class="col-md-3">
+                        <span class="badge status-pendiente me-2">Pendiente</span>
+                        <span class="text-muted">Turnos por confirmar</span>
+                    </div>
+                    <div class="col-md-3">
+                        <span class="badge status-confirmado me-2">Confirmado</span>
+                        <span class="text-muted">Turnos confirmados</span>
+                    </div>
+                    <div class="col-md-3">
+                        <span class="badge status-completado me-2">Completado</span>
+                        <span class="text-muted">Turnos realizados</span>
+                    </div>
+                    <div class="col-md-3">
+                        <span class="badge status-cancelado me-2">Cancelado</span>
+                        <span class="text-muted">Turnos cancelados</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Resumen del día -->
+<div class="row mt-4">
+    <div class="col-md-3">
+        <div class="card bg-primary text-white">
+            <div class="card-body text-center">
+                <h4 class="mb-0" id="totalTurnos">0</h4>
+                <small>Total Turnos Hoy</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-warning text-white">
+            <div class="card-body text-center">
+                <h4 class="mb-0" id="turnosPendientes">0</h4>
+                <small>Pendientes</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-info text-white">
+            <div class="card-body text-center">
+                <h4 class="mb-0" id="turnosConfirmados">0</h4>
+                <small>Confirmados</small>
+            </div>

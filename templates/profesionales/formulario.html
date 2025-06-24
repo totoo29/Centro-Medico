@@ -1,0 +1,535 @@
+{% extends "base.html" %}
+
+{% block title %}
+    {% if profesional %}Editar Médico{% else %}Nuevo Médico{% endif %} - Consultorio Médico
+{% endblock %}
+
+{% block page_title %}
+    {% if profesional %}Editar Médico{% else %}Nuevo Médico{% endif %}
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-{% if profesional %}edit{% else %}plus{% endif %}"></i>
+                    {% if profesional %}Editar Médico - {{ profesional.nombre_completo }}{% else %}Agregar Nuevo Médico{% endif %}
+                </h5>
+            </div>
+            <div class="card-body">
+                <form id="formProfesional" method="POST" 
+                      action="{% if profesional %}{{ url_for('profesionales.actualizar', id=profesional.id) }}{% else %}{{ url_for('profesionales.crear') }}{% endif %}">
+                    
+                    <div class="row">
+                        <!-- Nombre -->
+                        <div class="col-md-6 mb-3">
+                            <label for="nombre" class="form-label">
+                                <i class="fas fa-user"></i> Nombre <span class="text-danger">*</span>
+                            </label>
+                            <input type="text" class="form-control" id="nombre" name="nombre" 
+                                   value="{{ profesional.nombre if profesional else '' }}" required>
+                            <div class="invalid-feedback"></div>
+                        </div>
+
+                        <!-- Apellido -->
+                        <div class="col-md-6 mb-3">
+                            <label for="apellido" class="form-label">
+                                <i class="fas fa-user"></i> Apellido <span class="text-danger">*</span>
+                            </label>
+                            <input type="text" class="form-control" id="apellido" name="apellido" 
+                                   value="{{ profesional.apellido if profesional else '' }}" required>
+                            <div class="invalid-feedback"></div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <!-- Especialidad -->
+                        <div class="col-md-12 mb-3">
+                            <label for="especialidad" class="form-label">
+                                <i class="fas fa-stethoscope"></i> Especialidad
+                            </label>
+                            <select class="form-select" id="especialidad" name="especialidad">
+                                <option value="">Seleccione una especialidad</option>
+                                <option value="Médico Clínico" {% if profesional and profesional.especialidad == 'Médico Clínico' %}selected{% endif %}>Médico Clínico</option>
+                                <option value="Cardiología" {% if profesional and profesional.especialidad == 'Cardiología' %}selected{% endif %}>Cardiología</option>
+                                <option value="Dermatología" {% if profesional and profesional.especialidad == 'Dermatología' %}selected{% endif %}>Dermatología</option>
+                                <option value="Endocrinología" {% if profesional and profesional.especialidad == 'Endocrinología' %}selected{% endif %}>Endocrinología</option>
+                                <option value="Gastroenterología" {% if profesional and profesional.especialidad == 'Gastroenterología' %}selected{% endif %}>Gastroenterología</option>
+                                <option value="Ginecología" {% if profesional and profesional.especialidad == 'Ginecología' %}selected{% endif %}>Ginecología</option>
+                                <option value="Neurología" {% if profesional and profesional.especialidad == 'Neurología' %}selected{% endif %}>Neurología</option>
+                                <option value="Oftalmología" {% if profesional and profesional.especialidad == 'Oftalmología' %}selected{% endif %}>Oftalmología</option>
+                                <option value="Pediatría" {% if profesional and profesional.especialidad == 'Pediatría' %}selected{% endif %}>Pediatría</option>
+                                <option value="Psiquiatría" {% if profesional and profesional.especialidad == 'Psiquiatría' %}selected{% endif %}>Psiquiatría</option>
+                                <option value="Traumatología" {% if profesional and profesional.especialidad == 'Traumatología' %}selected{% endif %}>Traumatología</option>
+                                <option value="Urología" {% if profesional and profesional.especialidad == 'Urología' %}selected{% endif %}>Urología</option>
+                                <option value="Otro" {% if profesional and profesional.especialidad and profesional.especialidad not in ['Médico Clínico', 'Cardiología', 'Dermatología', 'Endocrinología', 'Gastroenterología', 'Ginecología', 'Neurología', 'Oftalmología', 'Pediatría', 'Psiquiatría', 'Traumatología', 'Urología'] %}selected{% endif %}>Otro</option>
+                            </select>
+                            <div class="form-text">Especialidad médica principal</div>
+                        </div>
+                    </div>
+
+                    <!-- Campo personalizado para especialidad "Otro" -->
+                    <div class="row" id="otroEspecialidadContainer" style="display: none;">
+                        <div class="col-md-12 mb-3">
+                            <label for="otroEspecialidad" class="form-label">
+                                <i class="fas fa-edit"></i> Especifique la especialidad
+                            </label>
+                            <input type="text" class="form-control" id="otroEspecialidad" 
+                                   placeholder="Escriba la especialidad específica..."
+                                   value="{% if profesional and profesional.especialidad and profesional.especialidad not in ['Médico Clínico', 'Cardiología', 'Dermatología', 'Endocrinología', 'Gastroenterología', 'Ginecología', 'Neurología', 'Oftalmología', 'Pediatría', 'Psiquiatría', 'Traumatología', 'Urología'] %}{{ profesional.especialidad }}{% endif %}">
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <!-- Teléfono -->
+                        <div class="col-md-6 mb-3">
+                            <label for="telefono" class="form-label">
+                                <i class="fas fa-phone"></i> Teléfono
+                            </label>
+                            <input type="tel" class="form-control" id="telefono" name="telefono" 
+                                   value="{{ profesional.telefono if profesional and profesional.telefono else '' }}"
+                                   placeholder="+54 9 11 1234-5678">
+                            <div class="form-text">Teléfono de contacto profesional</div>
+                            <div class="invalid-feedback"></div>
+                        </div>
+
+                        <!-- Email -->
+                        <div class="col-md-6 mb-3">
+                            <label for="email" class="form-label">
+                                <i class="fas fa-envelope"></i> Email Profesional
+                            </label>
+                            <input type="email" class="form-control" id="email" name="email" 
+                                   value="{{ profesional.email if profesional and profesional.email else '' }}"
+                                   placeholder="doctor@consultorio.com">
+                            <div class="form-text">Email institucional o profesional</div>
+                            <div class="invalid-feedback"></div>
+                        </div>
+                    </div>
+
+                    <!-- Vista previa de la información -->
+                    <div class="row mb-3">
+                        <div class="col-12">
+                            <div class="card bg-light">
+                                <div class="card-body">
+                                    <h6 class="card-title">
+                                        <i class="fas fa-eye"></i> Vista Previa del Perfil Médico
+                                    </h6>
+                                    <div class="row">
+                                        <div class="col-md-4">
+                                            <div class="text-center">
+                                                <div class="doctor-avatar-large mb-2">
+                                                    <i class="fas fa-user-md"></i>
+                                                </div>
+                                                <div id="previewNombre" class="text-muted">-</div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-8">
+                                            <div class="row">
+                                                <div class="col-md-6">
+                                                    <strong>Especialidad:</strong><br>
+                                                    <span id="previewEspecialidad" class="text-muted">-</span>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <strong>Contacto:</strong><br>
+                                                    <span id="previewContacto" class="text-muted">-</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Configuración de horarios (futura implementación) -->
+                    <div class="row mb-3">
+                        <div class="col-12">
+                            <div class="alert alert-info">
+                                <h6><i class="fas fa-clock"></i> Configuración de Horarios</h6>
+                                <p class="mb-0">Los horarios de atención se configurarán después de crear el perfil del médico.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Botones de acción -->
+                    <div class="row">
+                        <div class="col-12">
+                            <div class="d-flex justify-content-between">
+                                <a href="{{ url_for('profesionales.listar') }}" class="btn btn-secondary">
+                                    <i class="fas fa-arrow-left"></i> Volver a la Lista
+                                </a>
+                                
+                                <div>
+                                    {% if profesional %}
+                                        <a href="{{ url_for('profesionales.detalle', id=profesional.id) }}" class="btn btn-outline-info me-2">
+                                            <i class="fas fa-eye"></i> Ver Detalle
+                                        </a>
+                                    {% endif %}
+                                    
+                                    <button type="button" class="btn btn-outline-warning me-2" onclick="limpiarFormulario()">
+                                        <i class="fas fa-eraser"></i> Limpiar
+                                    </button>
+                                    
+                                    <button type="submit" class="btn btn-success" id="btnGuardar">
+                                        <i class="fas fa-save"></i> 
+                                        {% if profesional %}Actualizar Médico{% else %}Guardar Médico{% endif %}
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        {% if profesional %}
+        <!-- Información del registro -->
+        <div class="card mt-4">
+            <div class="card-header">
+                <h6 class="card-title mb-0">
+                    <i class="fas fa-history"></i> Información del Registro
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-4">
+                        <strong>Fecha de Registro:</strong><br>
+                        <span class="text-muted">
+                            {{ profesional.fecha_creacion.strftime('%d/%m/%Y a las %H:%M') if profesional.fecha_creacion else 'No disponible' }}
+                        </span>
+                    </div>
+                    <div class="col-md-4">
+                        <strong>ID del Médico:</strong><br>
+                        <span class="badge bg-secondary">#{{ profesional.id }}</span>
+                    </div>
+                    <div class="col-md-4">
+                        <strong>Total de Turnos:</strong><br>
+                        <span class="badge bg-info">{{ profesional.turnos|length }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.doctor-avatar-large {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    margin: 0 auto;
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const campos = {
+        nombre: document.getElementById('nombre'),
+        apellido: document.getElementById('apellido'),
+        especialidad: document.getElementById('especialidad'),
+        telefono: document.getElementById('telefono'),
+        email: document.getElementById('email')
+    };
+
+    // Actualizar vista previa cuando cambian los campos
+    Object.values(campos).forEach(campo => {
+        campo.addEventListener('input', actualizarVistaPrevia);
+        campo.addEventListener('blur', validarCampo);
+    });
+
+    // Manejar especialidad "Otro"
+    document.getElementById('especialidad').addEventListener('change', function() {
+        const otroContainer = document.getElementById('otroEspecialidadContainer');
+        if (this.value === 'Otro') {
+            otroContainer.style.display = 'block';
+            document.getElementById('otroEspecialidad').focus();
+        } else {
+            otroContainer.style.display = 'none';
+            document.getElementById('otroEspecialidad').value = '';
+        }
+        actualizarVistaPrevia();
+    });
+
+    // Actualizar vista previa inicial
+    actualizarVistaPrevia();
+    
+    // Mostrar campo "Otro" si ya está seleccionado
+    if (document.getElementById('especialidad').value === 'Otro') {
+        document.getElementById('otroEspecialidadContainer').style.display = 'block';
+    }
+});
+
+function actualizarVistaPrevia() {
+    const nombre = document.getElementById('nombre').value.trim();
+    const apellido = document.getElementById('apellido').value.trim();
+    const especialidad = document.getElementById('especialidad').value;
+    const otroEspecialidad = document.getElementById('otroEspecialidad').value.trim();
+    const telefono = document.getElementById('telefono').value.trim();
+    const email = document.getElementById('email').value.trim();
+
+    // Nombre completo
+    const nombreCompleto = [nombre, apellido].filter(x => x).join(' ') || 'Sin nombre';
+    document.getElementById('previewNombre').innerHTML = `<strong>${nombreCompleto}</strong>`;
+
+    // Especialidad
+    let especialidadFinal = '';
+    if (especialidad === 'Otro' && otroEspecialidad) {
+        especialidadFinal = otroEspecialidad;
+    } else if (especialidad && especialidad !== 'Otro') {
+        especialidadFinal = especialidad;
+    }
+    
+    document.getElementById('previewEspecialidad').textContent = especialidadFinal || 'Sin especialidad';
+
+    // Contacto
+    const contactos = [];
+    if (telefono) contactos.push(`📞 ${telefono}`);
+    if (email) contactos.push(`📧 ${email}`);
+    
+    document.getElementById('previewContacto').textContent = 
+        contactos.length > 0 ? contactos.join(' | ') : 'Sin datos de contacto';
+}
+
+function validarCampo(event) {
+    const campo = event.target;
+    const valor = campo.value.trim();
+    
+    // Limpiar validaciones previas
+    campo.classList.remove('is-valid', 'is-invalid');
+    const feedback = campo.nextElementSibling;
+    if (feedback && feedback.classList.contains('invalid-feedback')) {
+        feedback.textContent = '';
+    }
+
+    // Validaciones específicas
+    switch (campo.id) {
+        case 'nombre':
+        case 'apellido':
+            if (!valor) {
+                mostrarError(campo, 'Este campo es obligatorio');
+                return false;
+            }
+            if (valor.length < 2) {
+                mostrarError(campo, 'Debe tener al menos 2 caracteres');
+                return false;
+            }
+            if (!/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s\-\'\.]+$/.test(valor)) {
+                mostrarError(campo, 'Solo se permiten letras, espacios y algunos caracteres especiales');
+                return false;
+            }
+            break;
+
+        case 'telefono':
+            if (valor && !validarTelefono(valor)) {
+                mostrarError(campo, 'Formato de teléfono no válido');
+                return false;
+            }
+            break;
+
+        case 'email':
+            if (valor && !validarEmail(valor)) {
+                mostrarError(campo, 'Formato de email no válido');
+                return false;
+            }
+            break;
+    }
+
+    // Campo válido
+    if (valor) {
+        campo.classList.add('is-valid');
+    }
+    return true;
+}
+
+function mostrarError(campo, mensaje) {
+    campo.classList.add('is-invalid');
+    const feedback = campo.nextElementSibling;
+    if (feedback && feedback.classList.contains('invalid-feedback')) {
+        feedback.textContent = mensaje;
+    }
+}
+
+function validarTelefono(telefono) {
+    const patterns = [
+        /^\+54\s?9?\s?\d{2,4}\s?\d{4}-?\d{4}$/,
+        /^\d{2,4}\s?\d{4}-?\d{4}$/,
+        /^\d{8,10}$/
+    ];
+    return patterns.some(pattern => pattern.test(telefono));
+}
+
+function validarEmail(email) {
+    const pattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return pattern.test(email);
+}
+
+function limpiarFormulario() {
+    if (confirm('¿Está seguro de que desea limpiar todos los campos?')) {
+        document.getElementById('formProfesional').reset();
+        
+        // Limpiar validaciones
+        document.querySelectorAll('.is-valid, .is-invalid').forEach(el => {
+            el.classList.remove('is-valid', 'is-invalid');
+        });
+        
+        // Ocultar campo "Otro"
+        document.getElementById('otroEspecialidadContainer').style.display = 'none';
+        
+        // Actualizar vista previa
+        actualizarVistaPrevia();
+        
+        // Focus en primer campo
+        document.getElementById('nombre').focus();
+    }
+}
+
+// Envío del formulario
+document.getElementById('formProfesional').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    // Validar campos obligatorios
+    const camposObligatorios = ['nombre', 'apellido'];
+    let todoValido = true;
+    
+    camposObligatorios.forEach(id => {
+        const campo = document.getElementById(id);
+        if (!validarCampo({target: campo})) {
+            todoValido = false;
+        }
+    });
+    
+    // Validar campos opcionales si tienen valor
+    ['telefono', 'email'].forEach(id => {
+        const campo = document.getElementById(id);
+        if (campo.value.trim()) {
+            if (!validarCampo({target: campo})) {
+                todoValido = false;
+            }
+        }
+    });
+    
+    if (!todoValido) {
+        alert('Por favor, corrija los errores en el formulario');
+        return;
+    }
+    
+    // Manejar especialidad "Otro"
+    const especialidadSelect = document.getElementById('especialidad');
+    const otroEspecialidad = document.getElementById('otroEspecialidad');
+    
+    if (especialidadSelect.value === 'Otro' && otroEspecialidad.value.trim()) {
+        // Crear input hidden para enviar la especialidad personalizada
+        const hiddenInput = document.createElement('input');
+        hiddenInput.type = 'hidden';
+        hiddenInput.name = 'especialidad';
+        hiddenInput.value = otroEspecialidad.value.trim();
+        this.appendChild(hiddenInput);
+        
+        // Desactivar el select para que no se envíe
+        especialidadSelect.disabled = true;
+    }
+    
+    // Mostrar loading
+    const btnGuardar = document.getElementById('btnGuardar');
+    const textoOriginal = btnGuardar.innerHTML;
+    btnGuardar.innerHTML = '<span class="loading"></span> Guardando...';
+    btnGuardar.disabled = true;
+    
+    // Enviar formulario
+    const formData = new FormData(this);
+    const url = this.action;
+    
+    fetch(url, {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
+    .then(response => {
+        if (response.redirected) {
+            window.location.href = response.url;
+        } else {
+            return response.json();
+        }
+    })
+    .then(data => {
+        if (data && data.success) {
+            window.location.href = "{{ url_for('profesionales.listar') }}";
+        } else if (data && data.error) {
+            alert('Error: ' + data.error);
+            btnGuardar.innerHTML = textoOriginal;
+            btnGuardar.disabled = false;
+            especialidadSelect.disabled = false;
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error de conexión. Por favor, intente nuevamente.');
+        btnGuardar.innerHTML = textoOriginal;
+        btnGuardar.disabled = false;
+        especialidadSelect.disabled = false;
+    });
+});
+
+// Formateo automático del teléfono
+document.getElementById('telefono').addEventListener('input', function(e) {
+    let valor = e.target.value.replace(/\D/g, '');
+    
+    if (valor.startsWith('549')) {
+        valor = valor.substring(3);
+        if (valor.length >= 2) {
+            valor = `+54 9 ${valor.substring(0, 2)}${valor.length > 2 ? ' ' + valor.substring(2, 6) : ''}${valor.length > 6 ? '-' + valor.substring(6, 10) : ''}`;
+        }
+    } else if (valor.startsWith('54')) {
+        valor = valor.substring(2);
+        if (valor.length >= 2) {
+            valor = `+54 ${valor.substring(0, 2)}${valor.length > 2 ? ' ' + valor.substring(2, 6) : ''}${valor.length > 6 ? '-' + valor.substring(6, 10) : ''}`;
+        }
+    } else if (valor.length > 0) {
+        if (valor.length >= 2) {
+            valor = `${valor.substring(0, 2)}${valor.length > 2 ? ' ' + valor.substring(2, 6) : ''}${valor.length > 6 ? '-' + valor.substring(6, 10) : ''}`;
+        }
+    }
+    
+    e.target.value = valor;
+});
+
+// Capitalizar nombres automáticamente
+function capitalizarNombre(input) {
+    input.addEventListener('input', function(e) {
+        const words = e.target.value.toLowerCase().split(' ');
+        const capitalizedWords = words.map(word => {
+            if (word.length > 0) {
+                const preposiciones = ['de', 'del', 'la', 'el', 'y', 'e'];
+                if (preposiciones.includes(word)) {
+                    return word;
+                }
+                return word.charAt(0).toUpperCase() + word.slice(1);
+            }
+            return word;
+        });
+        e.target.value = capitalizedWords.join(' ');
+    });
+}
+
+capitalizarNombre(document.getElementById('nombre'));
+capitalizarNombre(document.getElementById('apellido'));
+
+// Listener para el campo "Otro especialidad"
+document.getElementById('otroEspecialidad').addEventListener('input', actualizarVistaPrevia);
+</script>
+{% endblock %}

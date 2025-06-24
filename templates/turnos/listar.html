@@ -1,0 +1,361 @@
+{% extends "base.html" %}
+
+{% block title %}Turnos - Consultorio Médico{% endblock %}
+{% block page_title %}Gestión de Turnos{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>
+        <i class="fas fa-calendar-alt"></i> Lista de Turnos
+    </h2>
+    <div>
+        <a href="{{ url_for('turnos.calendario') }}" class="btn btn-info me-2">
+            <i class="fas fa-calendar"></i> Vista de Calendario
+        </a>
+        <a href="{{ url_for('turnos.nuevo') }}" class="btn btn-primary">
+            <i class="fas fa-plus"></i> Nuevo Turno
+        </a>
+    </div>
+</div>
+
+<!-- Filtros -->
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="GET" class="row g-3">
+            <div class="col-md-3">
+                <label for="fecha_desde" class="form-label">Desde:</label>
+                <input type="date" class="form-control" id="fecha_desde" name="fecha_desde" 
+                       value="{{ filtros.fecha_desde or '' }}">
+            </div>
+            <div class="col-md-3">
+                <label for="fecha_hasta" class="form-label">Hasta:</label>
+                <input type="date" class="form-control" id="fecha_hasta" name="fecha_hasta" 
+                       value="{{ filtros.fecha_hasta or '' }}">
+            </div>
+            <div class="col-md-3">
+                <label for="estado" class="form-label">Estado:</label>
+                <select class="form-select" id="estado" name="estado">
+                    <option value="">Todos los estados</option>
+                    {% for estado in estados %}
+                        <option value="{{ estado }}" {% if filtros.estado == estado %}selected{% endif %}>
+                            {{ estado|title }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-3 d-flex align-items-end">
+                <button type="submit" class="btn btn-outline-primary me-2">
+                    <i class="fas fa-filter"></i> Filtrar
+                </button>
+                <a href="{{ url_for('turnos.listar') }}" class="btn btn-outline-secondary">
+                    <i class="fas fa-times"></i> Limpiar
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Lista de turnos -->
+<div class="card">
+    <div class="card-header">
+        <h5 class="card-title mb-0">
+            <i class="fas fa-list"></i> 
+            {% if turnos and turnos.items %}
+                {{ turnos.total }} turno{{ 's' if turnos.total != 1 else '' }} encontrado{{ 's' if turnos.total != 1 else '' }}
+            {% else %}
+                No hay turnos
+            {% endif %}
+        </h5>
+    </div>
+    <div class="card-body p-0">
+        {% if turnos and turnos.items %}
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Fecha/Hora</th>
+                            <th>Paciente</th>
+                            <th>Médico</th>
+                            <th>Servicio</th>
+                            <th>Estado</th>
+                            <th>Precio</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for turno in turnos.items %}
+                        <tr>
+                            <td>
+                                <div class="datetime-cell">
+                                    <strong>{{ turno.fecha.strftime('%d/%m/%Y') }}</strong><br>
+                                    <small class="text-muted">{{ turno.hora.strftime('%H:%M') }}</small>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="patient-cell">
+                                    <i class="fas fa-user"></i>
+                                    <a href="{{ url_for('clientes.detalle', id=turno.cliente.id) }}" 
+                                       class="text-decoration-none">
+                                        {{ turno.cliente.nombre_completo }}
+                                    </a>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="doctor-cell">
+                                    <i class="fas fa-user-md"></i>
+                                    {{ turno.profesional.nombre_completo }}
+                                </div>
+                            </td>
+                            <td>
+                                <span class="service-badge">{{ turno.servicio.nombre }}</span>
+                                <br><small class="text-muted">{{ turno.servicio.duracion }}min</small>
+                            </td>
+                            <td>
+                                <span class="badge status-{{ turno.estado }}">
+                                    {{ turno.estado|title }}
+                                </span>
+                            </td>
+                            <td>
+                                <strong>${{ "%.2f"|format(turno.precio_final or turno.servicio.precio or 0) }}</strong>
+                            </td>
+                            <td>
+                                <div class="btn-group btn-group-sm">
+                                    <a href="{{ url_for('turnos.detalle', id=turno.id) }}" 
+                                       class="btn btn-outline-info" title="Ver detalle">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    {% if turno.estado in ['pendiente', 'confirmado'] %}
+                                        <a href="{{ url_for('turnos.editar', id=turno.id) }}" 
+                                           class="btn btn-outline-warning" title="Editar">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                    {% endif %}
+                                    <div class="btn-group btn-group-sm">
+                                        <button type="button" class="btn btn-outline-secondary dropdown-toggle" 
+                                                data-bs-toggle="dropdown" title="Cambiar estado">
+                                            <i class="fas fa-exchange-alt"></i>
+                                        </button>
+                                        <ul class="dropdown-menu">
+                                            {% if turno.estado == 'pendiente' %}
+                                                <li><a class="dropdown-item" onclick="cambiarEstado({{ turno.id }}, 'confirmado')">
+                                                    <i class="fas fa-check"></i> Confirmar
+                                                </a></li>
+                                            {% endif %}
+                                            {% if turno.estado in ['pendiente', 'confirmado'] %}
+                                                <li><a class="dropdown-item" onclick="cambiarEstado({{ turno.id }}, 'completado')">
+                                                    <i class="fas fa-check-double"></i> Completar
+                                                </a></li>
+                                                <li><hr class="dropdown-divider"></li>
+                                                <li><a class="dropdown-item text-danger" onclick="cancelarTurno({{ turno.id }})">
+                                                    <i class="fas fa-times"></i> Cancelar
+                                                </a></li>
+                                            {% endif %}
+                                        </ul>
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Paginación -->
+            {% if turnos.pages > 1 %}
+            <div class="card-footer">
+                <nav aria-label="Paginación de turnos">
+                    <ul class="pagination justify-content-center mb-0">
+                        {% if turnos.has_prev %}
+                            <li class="page-item">
+                                <a class="page-link" href="{{ url_for('turnos.listar', page=turnos.prev_num, **filtros) }}">
+                                    <i class="fas fa-chevron-left"></i> Anterior
+                                </a>
+                            </li>
+                        {% endif %}
+
+                        {% for page_num in turnos.iter_pages() %}
+                            {% if page_num %}
+                                {% if page_num != turnos.page %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="{{ url_for('turnos.listar', page=page_num, **filtros) }}">
+                                            {{ page_num }}
+                                        </a>
+                                    </li>
+                                {% else %}
+                                    <li class="page-item active">
+                                        <span class="page-link">{{ page_num }}</span>
+                                    </li>
+                                {% endif %}
+                            {% else %}
+                                <li class="page-item disabled">
+                                    <span class="page-link">...</span>
+                                </li>
+                            {% endif %}
+                        {% endfor %}
+
+                        {% if turnos.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="{{ url_for('turnos.listar', page=turnos.next_num, **filtros) }}">
+                                    Siguiente <i class="fas fa-chevron-right"></i>
+                                </a>
+                            </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+            </div>
+            {% endif %}
+        {% else %}
+            <div class="text-center py-5">
+                <i class="fas fa-calendar-times fa-4x text-muted mb-3"></i>
+                <h4 class="text-muted">No hay turnos registrados</h4>
+                <p class="text-muted">
+                    {% if filtros.fecha_desde or filtros.fecha_hasta or filtros.estado %}
+                        No se encontraron turnos con los filtros aplicados
+                    {% else %}
+                        Comience programando el primer turno
+                    {% endif %}
+                </p>
+                <a href="{{ url_for('turnos.nuevo') }}" class="btn btn-primary">
+                    <i class="fas fa-plus"></i> Programar Primer Turno
+                </a>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Modal para cancelar turno -->
+<div class="modal fade" id="modalCancelar" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-times-circle text-danger"></i> Cancelar Turno
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>¿Está seguro de que desea cancelar este turno?</p>
+                <div class="mb-3">
+                    <label for="motivoCancelacion" class="form-label">Motivo de cancelación (opcional):</label>
+                    <textarea class="form-control" id="motivoCancelacion" rows="3" 
+                              placeholder="Escriba el motivo de la cancelación..."></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                <button type="button" class="btn btn-danger" id="confirmarCancelacion">
+                    <i class="fas fa-times"></i> Cancelar Turno
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.datetime-cell {
+    min-width: 100px;
+}
+
+.patient-cell, .doctor-cell {
+    min-width: 150px;
+}
+
+.service-badge {
+    background: #e3f2fd;
+    color: #1976d2;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 0.85em;
+}
+
+.status-pendiente { background-color: #ffc107; color: #000; }
+.status-confirmado { background-color: #17a2b8; }
+.status-completado { background-color: #28a745; }
+.status-cancelado { background-color: #dc3545; }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let turnoIdCancelar = null;
+
+function cambiarEstado(turnoId, nuevoEstado) {
+    if (confirm(`¿Cambiar estado del turno a "${nuevoEstado}"?`)) {
+        fetch(`/turnos/${turnoId}/cambiar-estado`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: JSON.stringify({ estado: nuevoEstado })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert('Error: ' + data.error);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error al cambiar estado del turno');
+        });
+    }
+}
+
+function cancelarTurno(turnoId) {
+    turnoIdCancelar = turnoId;
+    const modal = new bootstrap.Modal(document.getElementById('modalCancelar'));
+    modal.show();
+}
+
+document.getElementById('confirmarCancelacion').addEventListener('click', function() {
+    if (turnoIdCancelar) {
+        const motivo = document.getElementById('motivoCancelacion').value;
+        
+        this.innerHTML = '<span class="loading"></span> Cancelando...';
+        this.disabled = true;
+        
+        fetch(`/turnos/${turnoIdCancelar}/cancelar`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: JSON.stringify({ motivo: motivo })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                bootstrap.Modal.getInstance(document.getElementById('modalCancelar')).hide();
+                location.reload();
+            } else {
+                alert('Error: ' + data.error);
+                this.innerHTML = '<i class="fas fa-times"></i> Cancelar Turno';
+                this.disabled = false;
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error al cancelar turno');
+            this.innerHTML = '<i class="fas fa-times"></i> Cancelar Turno';
+            this.disabled = false;
+        });
+    }
+});
+
+// Establecer fecha de hoy por defecto
+document.addEventListener('DOMContentLoaded', function() {
+    const hoy = new Date().toISOString().split('T')[0];
+    const fechaDesde = document.getElementById('fecha_desde');
+    const fechaHasta = document.getElementById('fecha_hasta');
+    
+    if (!fechaDesde.value) {
+        fechaDesde.value = hoy;
+    }
+});
+</script>
+{% endblock %}

@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+
+{% block title %}Página No Encontrada - Consultorio Médico{% endblock %}
+{% block page_title %}Error 404{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6 text-center">
+        <div class="error-page">
+            <div class="error-code">
+                <h1 class="display-1 text-primary">404</h1>
+            </div>
+            
+            <div class="error-message mb-4">
+                <h3 class="mb-3">¡Página No Encontrada!</h3>
+                <p class="text-muted">
+                    Lo sentimos, la página que está buscando no existe o ha sido movida.
+                </p>
+            </div>
+            
+            <div class="error-icon mb-4">
+                <i class="fas fa-stethoscope fa-5x text-muted"></i>
+            </div>
+            
+            <div class="error-actions">
+                <a href="{{ url_for('main.index') }}" class="btn btn-primary btn-lg me-3">
+                    <i class="fas fa-home"></i> Ir al Dashboard
+                </a>
+                <button onclick="history.back()" class="btn btn-outline-secondary btn-lg">
+                    <i class="fas fa-arrow-left"></i> Volver Atrás
+                </button>
+            </div>
+            
+            <div class="error-suggestions mt-5">
+                <h5>¿Qué puedes hacer?</h5>
+                <div class="row mt-3">
+                    <div class="col-md-6">
+                        <div class="suggestion-card">
+                            <i class="fas fa-users fa-2x text-primary mb-2"></i>
+                            <h6>Gestionar Pacientes</h6>
+                            <a href="{{ url_for('clientes.listar') }}" class="btn btn-sm btn-outline-primary">
+                                Ver Pacientes
+                            </a>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="suggestion-card">
+                            <i class="fas fa-calendar-alt fa-2x text-success mb-2"></i>
+                            <h6>Ver Turnos</h6>
+                            <a href="{{ url_for('turnos.listar') }}" class="btn btn-sm btn-outline-success">
+                                Ver Turnos
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.error-page {
+    padding: 2rem 0;
+}
+
+.error-code h1 {
+    font-weight: 900;
+    font-size: 8rem;
+    line-height: 1;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+}
+
+.suggestion-card {
+    padding: 1.5rem;
+    border: 1px solid #dee2e6;
+    border-radius: 10px;
+    margin-bottom: 1rem;
+    transition: transform 0.3s;
+}
+
+.suggestion-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+}
+
+@media (max-width: 768px) {
+    .error-code h1 {
+        font-size: 5rem;
+    }
+}
+</style>
+{% endblock %}

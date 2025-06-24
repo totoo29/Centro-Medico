@@ -1,0 +1,473 @@
+{% extends "base.html" %}
+
+{% block title %}Turno {{ turno.fecha.strftime('%d/%m/%Y') }} - Consultorio Médico{% endblock %}
+{% block page_title %}Detalle del Turno{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-4">
+        <!-- Información principal del turno -->
+        <div class="card">
+            <div class="card-header text-center">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-calendar-alt"></i> Información del Turno
+                </h5>
+            </div>
+            <div class="card-body text-center">
+                <div class="appointment-date mb-3">
+                    <h3 class="text-primary">{{ turno.fecha.strftime('%d') }}</h3>
+                    <p class="mb-0">{{ turno.fecha.strftime('%B %Y')|title }}</p>
+                    <small class="text-muted">{{ turno.fecha.strftime('%A')|title }}</small>
+                </div>
+                
+                <div class="appointment-time mb-3">
+                    <h4 class="text-secondary">
+                        <i class="fas fa-clock"></i> {{ turno.hora.strftime('%H:%M') }}
+                    </h4>
+                </div>
+
+                <div class="appointment-status mb-3">
+                    <span class="badge status-{{ turno.estado }} badge-lg">
+                        <i class="fas fa-{% if turno.estado == 'pendiente' %}clock{% elif turno.estado == 'confirmado' %}check{% elif turno.estado == 'completado' %}check-double{% else %}times{% endif %}"></i>
+                        {{ turno.estado|title }}
+                    </span>
+                </div>
+
+                <div class="d-grid gap-2">
+                    {% if turno.estado in ['pendiente', 'confirmado'] %}
+                        <a href="{{ url_for('turnos.editar', id=turno.id) }}" class="btn btn-warning">
+                            <i class="fas fa-edit"></i> Editar Turno
+                        </a>
+                        <div class="btn-group" role="group">
+                            {% if turno.estado == 'pendiente' %}
+                                <button class="btn btn-success" onclick="cambiarEstado('confirmado')">
+                                    <i class="fas fa-check"></i> Confirmar
+                                </button>
+                            {% endif %}
+                            <button class="btn btn-info" onclick="cambiarEstado('completado')">
+                                <i class="fas fa-check-double"></i> Completar
+                            </button>
+                        </div>
+                        <button class="btn btn-outline-danger" onclick="cancelarTurno()">
+                            <i class="fas fa-times"></i> Cancelar Turno
+                        </button>
+                    {% else %}
+                        <span class="text-muted">
+                            <i class="fas fa-info-circle"></i> 
+                            {% if turno.estado == 'completado' %}
+                                Turno completado exitosamente
+                            {% else %}
+                                Turno cancelado
+                            {% endif %}
+                        </span>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Información del servicio -->
+        <div class="card mt-4">
+            <div class="card-header">
+                <h6 class="card-title mb-0">
+                    <i class="fas fa-medical-bag"></i> Información del Servicio
+                </h6>
+            </div>
+            <div class="card-body">
+                <h6 class="text-primary">{{ turno.servicio.nombre }}</h6>
+                {% if turno.servicio.descripcion %}
+                    <p class="text-muted small">{{ turno.servicio.descripcion }}</p>
+                {% endif %}
+                
+                <div class="service-details">
+                    <div class="d-flex justify-content-between mb-2">
+                        <span><i class="fas fa-clock text-info"></i> Duración:</span>
+                        <strong>{{ turno.servicio.duracion }} minutos</strong>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span><i class="fas fa-dollar-sign text-success"></i> Precio:</span>
+                        <strong>${{ "%.2f"|format(turno.precio_final or turno.servicio.precio) }}</strong>
+                    </div>
+                    {% if turno.servicio.categoria %}
+                        <div class="d-flex justify-content-between">
+                            <span><i class="fas fa-tag text-secondary"></i> Categoría:</span>
+                            <span class="badge" style="background-color: {{ turno.servicio.categoria.color }};">
+                                {{ turno.servicio.categoria.nombre }}
+                            </span>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-8">
+        <!-- Información del paciente -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-user"></i> Información del Paciente
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-8">
+                        <h5 class="text-primary">
+                            <a href="{{ url_for('clientes.detalle', id=turno.cliente.id) }}" class="text-decoration-none">
+                                {{ turno.cliente.nombre_completo }}
+                            </a>
+                        </h5>
+                        
+                        <div class="patient-contact mt-3">
+                            {% if turno.cliente.telefono %}
+                                <div class="mb-2">
+                                    <i class="fas fa-phone text-primary"></i>
+                                    <a href="tel:{{ turno.cliente.telefono }}" class="text-decoration-none ms-2">
+                                        {{ turno.cliente.telefono|telefono }}
+                                    </a>
+                                    <button class="btn btn-sm btn-outline-secondary ms-2" onclick="copiarTexto('{{ turno.cliente.telefono }}')">
+                                        <i class="fas fa-copy"></i>
+                                    </button>
+                                </div>
+                            {% endif %}
+                            
+                            {% if turno.cliente.email %}
+                                <div class="mb-2">
+                                    <i class="fas fa-envelope text-info"></i>
+                                    <a href="mailto:{{ turno.cliente.email }}" class="text-decoration-none ms-2">
+                                        {{ turno.cliente.email }}
+                                    </a>
+                                    <button class="btn btn-sm btn-outline-secondary ms-2" onclick="copiarTexto('{{ turno.cliente.email }}')">
+                                        <i class="fas fa-copy"></i>
+                                    </button>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="col-md-4 text-center">
+                        <div class="patient-avatar mb-2">
+                            {{ turno.cliente.nombre[0] }}{{ turno.cliente.apellido[0] }}
+                        </div>
+                        <small class="text-muted">ID: #{{ turno.cliente.id }}</small>
+                    </div>
+                </div>
+                
+                <div class="patient-actions mt-3">
+                    <a href="{{ url_for('clientes.detalle', id=turno.cliente.id) }}" class="btn btn-outline-primary btn-sm">
+                        <i class="fas fa-eye"></i> Ver Perfil Completo
+                    </a>
+                    <a href="{{ url_for('turnos.nuevo') }}?cliente_id={{ turno.cliente.id }}" class="btn btn-outline-success btn-sm">
+                        <i class="fas fa-calendar-plus"></i> Nuevo Turno
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Información del médico -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-user-md"></i> Información del Médico
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-8">
+                        <h5 class="text-primary">
+                            <a href="{{ url_for('profesionales.detalle', id=turno.profesional.id) }}" class="text-decoration-none">
+                                {{ turno.profesional.nombre_completo }}
+                            </a>
+                        </h5>
+                        
+                        {% if turno.profesional.especialidad %}
+                            <div class="specialty-info mb-3">
+                                <span class="badge bg-success">
+                                    <i class="fas fa-stethoscope"></i> {{ turno.profesional.especialidad }}
+                                </span>
+                            </div>
+                        {% endif %}
+
+                        <div class="doctor-contact mt-3">
+                            {% if turno.profesional.telefono %}
+                                <div class="mb-2">
+                                    <i class="fas fa-phone text-primary"></i>
+                                    <a href="tel:{{ turno.profesional.telefono }}" class="text-decoration-none ms-2">
+                                        {{ turno.profesional.telefono|telefono }}
+                                    </a>
+                                </div>
+                            {% endif %}
+                            
+                            {% if turno.profesional.email %}
+                                <div class="mb-2">
+                                    <i class="fas fa-envelope text-info"></i>
+                                    <a href="mailto:{{ turno.profesional.email }}" class="text-decoration-none ms-2">
+                                        {{ turno.profesional.email }}
+                                    </a>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="col-md-4 text-center">
+                        <div class="doctor-avatar mb-2">
+                            <i class="fas fa-user-md"></i>
+                        </div>
+                        <small class="text-muted">ID: #{{ turno.profesional.id }}</small>
+                    </div>
+                </div>
+                
+                <div class="doctor-actions mt-3">
+                    <a href="{{ url_for('profesionales.detalle', id=turno.profesional.id) }}" class="btn btn-outline-primary btn-sm">
+                        <i class="fas fa-eye"></i> Ver Perfil Completo
+                    </a>
+                    <a href="{{ url_for('turnos.nuevo') }}?profesional_id={{ turno.profesional.id }}" class="btn btn-outline-info btn-sm">
+                        <i class="fas fa-calendar-plus"></i> Nuevo Turno
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Observaciones -->
+        {% if turno.observaciones %}
+        <div class="card mb-4">
+            <div class="card-header">
+                <h6 class="card-title mb-0">
+                    <i class="fas fa-sticky-note"></i> Observaciones
+                </h6>
+            </div>
+            <div class="card-body">
+                <p class="mb-0">{{ turno.observaciones }}</p>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Historial del turno -->
+        <div class="card">
+            <div class="card-header">
+                <h6 class="card-title mb-0">
+                    <i class="fas fa-history"></i> Información del Registro
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="info-item">
+                            <strong>ID del Turno:</strong><br>
+                            <span class="badge bg-secondary">#{{ turno.id }}</span>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="info-item">
+                            <strong>Fecha de Creación:</strong><br>
+                            <span class="text-muted">
+                                {{ turno.fecha_creacion.strftime('%d/%m/%Y a las %H:%M') if turno.fecha_creacion else 'No disponible' }}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Navegación inferior -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="d-flex justify-content-between">
+            <a href="{{ url_for('turnos.listar') }}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Volver a la Lista
+            </a>
+            <div>
+                <button class="btn btn-outline-info me-2" onclick="imprimirTurno()">
+                    <i class="fas fa-print"></i> Imprimir
+                </button>
+                <button class="btn btn-outline-success" onclick="enviarRecordatorio()">
+                    <i class="fas fa-bell"></i> Enviar Recordatorio
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para cancelar turno -->
+<div class="modal fade" id="modalCancelar" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-times-circle text-danger"></i> Cancelar Turno
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>¿Está seguro de que desea cancelar este turno?</p>
+                <div class="mb-3">
+                    <label for="motivoCancelacion" class="form-label">Motivo de cancelación:</label>
+                    <textarea class="form-control" id="motivoCancelacion" rows="3" 
+                              placeholder="Escriba el motivo de la cancelación..."></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                <button type="button" class="btn btn-danger" id="confirmarCancelacion">
+                    <i class="fas fa-times"></i> Cancelar Turno
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.appointment-date h3 {
+    font-size: 3rem;
+    font-weight: bold;
+    line-height: 1;
+}
+
+.badge-lg {
+    font-size: 1rem;
+    padding: 0.5rem 1rem;
+}
+
+.patient-avatar, .doctor-avatar {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    font-weight: bold;
+    margin: 0 auto;
+}
+
+.doctor-avatar {
+    background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+    font-size: 1.5rem;
+}
+
+.service-details {
+    border-top: 1px solid #eee;
+    padding-top: 1rem;
+}
+
+.info-item {
+    margin-bottom: 1rem;
+}
+
+.status-pendiente { background-color: #ffc107; color: #000; }
+.status-confirmado { background-color: #17a2b8; }
+.status-completado { background-color: #28a745; }
+.status-cancelado { background-color: #dc3545; }
+
+@media print {
+    .btn, .modal { display: none !important; }
+    .card { border: 1px solid #000; margin-bottom: 1rem; }
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function cambiarEstado(nuevoEstado) {
+    if (confirm(`¿Cambiar estado del turno a "${nuevoEstado}"?`)) {
+        fetch(`/turnos/{{ turno.id }}/cambiar-estado`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: JSON.stringify({ estado: nuevoEstado })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert('Error: ' + data.error);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error al cambiar estado del turno');
+        });
+    }
+}
+
+function cancelarTurno() {
+    const modal = new bootstrap.Modal(document.getElementById('modalCancelar'));
+    modal.show();
+}
+
+document.getElementById('confirmarCancelacion').addEventListener('click', function() {
+    const motivo = document.getElementById('motivoCancelacion').value;
+    
+    this.innerHTML = '<span class="loading"></span> Cancelando...';
+    this.disabled = true;
+    
+    fetch(`/turnos/{{ turno.id }}/cancelar`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest'
+        },
+        body: JSON.stringify({ motivo: motivo })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            bootstrap.Modal.getInstance(document.getElementById('modalCancelar')).hide();
+            location.reload();
+        } else {
+            alert('Error: ' + data.error);
+            this.innerHTML = '<i class="fas fa-times"></i> Cancelar Turno';
+            this.disabled = false;
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error al cancelar turno');
+        this.innerHTML = '<i class="fas fa-times"></i> Cancelar Turno';
+        this.disabled = false;
+    });
+});
+
+function copiarTexto(texto) {
+    navigator.clipboard.writeText(texto).then(function() {
+        showToast('Copiado al portapapeles', 'success');
+    }).catch(function(err) {
+        console.error('Error al copiar: ', err);
+        alert('Texto copiado: ' + texto);
+    });
+}
+
+function imprimirTurno() {
+    window.print();
+}
+
+function enviarRecordatorio() {
+    alert('Funcionalidad de recordatorios en desarrollo');
+}
+
+function showToast(message, type) {
+    // Implementar toast notification
+    const alertDiv = document.createElement('div');
+    alertDiv.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
+    alertDiv.style.cssText = 'top: 20px; right: 20px; z-index: 9999;';
+    alertDiv.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    
+    document.body.appendChild(alertDiv);
+    
+    setTimeout(() => {
+        if (alertDiv.parentNode) {
+            alertDiv.parentNode.removeChild(alertDiv);
+        }
+    }, 3000);
+}
+</script>
+{% endblock %}

@@ -1,0 +1,385 @@
+{% extends "base.html" %}
+
+{% block title %}Servicios Médicos - Consultorio Médico{% endblock %}
+{% block page_title %}Gestión de Servicios{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>
+        <i class="fas fa-briefcase-medical"></i> Lista de Servicios Médicos
+    </h2>
+    <div>
+        <a href="{{ url_for('servicios.nuevo') }}" class="btn btn-primary">
+            <i class="fas fa-plus"></i> Nuevo Servicio
+        </a>
+        <div class="btn-group ms-2">
+            <button type="button" class="btn btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown">
+                <i class="fas fa-download"></i> Exportar
+            </button>
+            <ul class="dropdown-menu">
+                <li><a class="dropdown-item" href="#" onclick="exportarDatos('excel')">
+                    <i class="fas fa-file-excel"></i> Excel
+                </a></li>
+                <li><a class="dropdown-item" href="#" onclick="exportarDatos('csv')">
+                    <i class="fas fa-file-csv"></i> CSV
+                </a></li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+<!-- Filtros y búsqueda -->
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="GET" class="row g-3">
+            <div class="col-md-4">
+                <label for="search" class="form-label">Buscar:</label>
+                <input type="text" class="form-control" id="search" name="search" 
+                       value="{{ search }}" placeholder="Nombre o descripción del servicio...">
+            </div>
+            <div class="col-md-3">
+                <label for="categoria_id" class="form-label">Categoría:</label>
+                <select class="form-select" id="categoria_id" name="categoria_id">
+                    <option value="">Todas las categorías</option>
+                    {% for categoria in categorias %}
+                        <option value="{{ categoria.id }}" {% if categoria_id == categoria.id %}selected{% endif %}>
+                            {{ categoria.nombre }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label for="per_page" class="form-label">Mostrar:</label>
+                <select class="form-select" id="per_page" name="per_page">
+                    <option value="10" {% if request.args.get('per_page', '10') == '10' %}selected{% endif %}>10 por página</option>
+                    <option value="25" {% if request.args.get('per_page') == '25' %}selected{% endif %}>25 por página</option>
+                    <option value="50" {% if request.args.get('per_page') == '50' %}selected{% endif %}>50 por página</option>
+                </select>
+            </div>
+            <div class="col-md-3 d-flex align-items-end">
+                <button type="submit" class="btn btn-outline-primary me-2">
+                    <i class="fas fa-search"></i> Buscar
+                </button>
+                <a href="{{ url_for('servicios.listar') }}" class="btn btn-outline-secondary">
+                    <i class="fas fa-times"></i> Limpiar
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Lista de servicios -->
+<div class="card">
+    <div class="card-header">
+        <h5 class="card-title mb-0">
+            <i class="fas fa-list"></i> 
+            {% if servicios and servicios.items %}
+                {{ servicios.total }} servicio{{ 's' if servicios.total != 1 else '' }} encontrado{{ 's' if servicios.total != 1 else '' }}
+            {% else %}
+                No hay servicios
+            {% endif %}
+        </h5>
+    </div>
+    <div class="card-body p-0">
+        {% if servicios and servicios.items %}
+            <div class="row">
+                {% for servicio in servicios.items %}
+                <div class="col-md-6 col-lg-4 mb-4">
+                    <div class="card service-card h-100">
+                        <div class="card-header d-flex justify-content-between align-items-start">
+                            <div>
+                                {% if servicio.categoria %}
+                                    <span class="badge category-badge" style="background-color: {{ servicio.categoria.color }}20; color: {{ servicio.categoria.color }};">
+                                        <i class="fas fa-tag"></i> {{ servicio.categoria.nombre }}
+                                    </span>
+                                {% else %}
+                                    <span class="badge bg-secondary">
+                                        <i class="fas fa-tag"></i> Sin categoría
+                                    </span>
+                                {% endif %}
+                            </div>
+                            <div class="dropdown">
+                                <button class="btn btn-sm btn-outline-secondary" type="button" data-bs-toggle="dropdown">
+                                    <i class="fas fa-ellipsis-v"></i>
+                                </button>
+                                <ul class="dropdown-menu">
+                                    <li><a class="dropdown-item" href="{{ url_for('servicios.detalle', id=servicio.id) }}">
+                                        <i class="fas fa-eye"></i> Ver detalle
+                                    </a></li>
+                                    <li><a class="dropdown-item" href="{{ url_for('servicios.editar', id=servicio.id) }}">
+                                        <i class="fas fa-edit"></i> Editar
+                                    </a></li>
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li><a class="dropdown-item text-danger" href="#" onclick="eliminarServicio({{ servicio.id }}, '{{ servicio.nombre }}')">
+                                        <i class="fas fa-trash"></i> Eliminar
+                                    </a></li>
+                                </ul>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <h6 class="card-title">
+                                <i class="fas fa-medical-bag text-primary"></i>
+                                {{ servicio.nombre }}
+                            </h6>
+                            {% if servicio.descripcion %}
+                                <p class="card-text text-muted small">
+                                    {{ servicio.descripcion[:100] }}{% if servicio.descripcion|length > 100 %}...{% endif %}
+                                </p>
+                            {% endif %}
+                            
+                            <div class="service-details mt-3">
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <span class="text-muted small">
+                                        <i class="fas fa-clock"></i> Duración:
+                                    </span>
+                                    <span class="badge bg-info">{{ servicio.duracion }}min</span>
+                                </div>
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <span class="text-muted small">
+                                        <i class="fas fa-dollar-sign"></i> Precio:
+                                    </span>
+                                    <span class="price-tag">${{ "%.2f"|format(servicio.precio) }}</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card-footer bg-transparent">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <small class="text-muted">
+                                    ID: #{{ servicio.id }}
+                                </small>
+                                <div class="btn-group btn-group-sm">
+                                    <a href="{{ url_for('servicios.detalle', id=servicio.id) }}" 
+                                       class="btn btn-outline-info" title="Ver detalle">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    <a href="{{ url_for('servicios.editar', id=servicio.id) }}" 
+                                       class="btn btn-outline-warning" title="Editar">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    <a href="{{ url_for('turnos.nuevo') }}?servicio_id={{ servicio.id }}" 
+                                       class="btn btn-outline-success" title="Programar turno">
+                                        <i class="fas fa-calendar-plus"></i>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+
+            <!-- Paginación -->
+            {% if servicios.pages > 1 %}
+            <div class="d-flex justify-content-center mt-4">
+                <nav aria-label="Paginación de servicios">
+                    <ul class="pagination">
+                        {% if servicios.has_prev %}
+                            <li class="page-item">
+                                <a class="page-link" href="{{ url_for('servicios.listar', page=servicios.prev_num, search=search, categoria_id=categoria_id, per_page=request.args.get('per_page', 10)) }}">
+                                    <i class="fas fa-chevron-left"></i> Anterior
+                                </a>
+                            </li>
+                        {% endif %}
+
+                        {% for page_num in servicios.iter_pages() %}
+                            {% if page_num %}
+                                {% if page_num != servicios.page %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="{{ url_for('servicios.listar', page=page_num, search=search, categoria_id=categoria_id, per_page=request.args.get('per_page', 10)) }}">
+                                            {{ page_num }}
+                                        </a>
+                                    </li>
+                                {% else %}
+                                    <li class="page-item active">
+                                        <span class="page-link">{{ page_num }}</span>
+                                    </li>
+                                {% endif %}
+                            {% else %}
+                                <li class="page-item disabled">
+                                    <span class="page-link">...</span>
+                                </li>
+                            {% endif %}
+                        {% endfor %}
+
+                        {% if servicios.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="{{ url_for('servicios.listar', page=servicios.next_num, search=search, categoria_id=categoria_id, per_page=request.args.get('per_page', 10)) }}">
+                                    Siguiente <i class="fas fa-chevron-right"></i>
+                                </a>
+                            </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+            </div>
+            {% endif %}
+        {% else %}
+            <div class="text-center py-5">
+                <i class="fas fa-medical-bag fa-4x text-muted mb-3"></i>
+                <h4 class="text-muted">No hay servicios registrados</h4>
+                <p class="text-muted">
+                    {% if search or categoria_id %}
+                        No se encontraron servicios con los filtros aplicados
+                    {% else %}
+                        Comience agregando el primer servicio médico al sistema
+                    {% endif %}
+                </p>
+                {% if not search and not categoria_id %}
+                    <a href="{{ url_for('servicios.nuevo') }}" class="btn btn-primary">
+                        <i class="fas fa-plus"></i> Agregar Primer Servicio
+                    </a>
+                {% else %}
+                    <a href="{{ url_for('servicios.listar') }}" class="btn btn-outline-secondary">
+                        <i class="fas fa-arrow-left"></i> Ver Todos los Servicios
+                    </a>
+                {% endif %}
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Modal de confirmación para eliminar -->
+<div class="modal fade" id="modalEliminar" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-exclamation-triangle text-warning"></i> Confirmar Eliminación
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>¿Está seguro de que desea eliminar el servicio <strong id="nombreServicio"></strong>?</p>
+                <div class="alert alert-warning">
+                    <i class="fas fa-info-circle"></i>
+                    Esta acción desactivará el servicio pero conservará el historial de turnos asociados.
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-danger" id="confirmarEliminar">
+                    <i class="fas fa-trash"></i> Eliminar Servicio
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.service-card {
+    transition: transform 0.3s, box-shadow 0.3s;
+    border: 1px solid #dee2e6;
+}
+
+.service-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+}
+
+.category-badge {
+    font-size: 0.75em;
+    border-radius: 12px;
+}
+
+.price-tag {
+    font-size: 1.1rem;
+    font-weight: bold;
+    color: var(--bs-success);
+}
+
+.service-details {
+    border-top: 1px solid #eee;
+    padding-top: 0.75rem;
+}
+
+.card-footer {
+    border-top: 1px solid #eee;
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let servicioIdEliminar = null;
+
+function eliminarServicio(id, nombre) {
+    servicioIdEliminar = id;
+    document.getElementById('nombreServicio').textContent = nombre;
+    
+    const modal = new bootstrap.Modal(document.getElementById('modalEliminar'));
+    modal.show();
+}
+
+document.getElementById('confirmarEliminar').addEventListener('click', function() {
+    if (servicioIdEliminar) {
+        this.innerHTML = '<span class="loading"></span> Eliminando...';
+        this.disabled = true;
+        
+        fetch(`/servicios/${servicioIdEliminar}/eliminar`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                bootstrap.Modal.getInstance(document.getElementById('modalEliminar')).hide();
+                showAlert('Servicio eliminado correctamente', 'success');
+                setTimeout(() => window.location.reload(), 1500);
+            } else {
+                showAlert('Error al eliminar servicio: ' + data.error, 'danger');
+                this.innerHTML = '<i class="fas fa-trash"></i> Eliminar Servicio';
+                this.disabled = false;
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showAlert('Error de conexión al eliminar servicio', 'danger');
+            this.innerHTML = '<i class="fas fa-trash"></i> Eliminar Servicio';
+            this.disabled = false;
+        });
+    }
+});
+
+function exportarDatos(formato) {
+    const search = document.getElementById('search').value;
+    const categoria_id = document.getElementById('categoria_id').value;
+    const url = `/servicios/exportar?formato=${formato}&search=${encodeURIComponent(search)}&categoria_id=${categoria_id}`;
+    window.open(url, '_blank');
+}
+
+function showAlert(message, type) {
+    const alertDiv = document.createElement('div');
+    alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
+    alertDiv.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    
+    const content = document.querySelector('.content-wrapper');
+    content.insertBefore(alertDiv, content.firstChild);
+    
+    setTimeout(() => {
+        if (alertDiv.parentNode) {
+            alertDiv.parentNode.removeChild(alertDiv);
+        }
+    }, 5000);
+}
+
+// Auto-submit del formulario de búsqueda
+document.getElementById('search').addEventListener('input', function() {
+    clearTimeout(this.searchTimeout);
+    this.searchTimeout = setTimeout(() => {
+        this.form.submit();
+    }, 500);
+});
+
+// Auto-submit cuando cambia la categoría
+document.getElementById('categoria_id').addEventListener('change', function() {
+    this.form.submit();
+});
+</script>
+{% endblock %}
