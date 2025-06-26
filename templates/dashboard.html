@@ -4,65 +4,68 @@
 {% block page_title %}Dashboard Principal{% endblock %}
 
 {% block content %}
-<!-- Bienvenida -->
-<div class="row mb-4">
-    <div class="col-12">
-        <div class="alert alert-info">
-            <h4 class="alert-heading">
-                <i class="fas fa-user-circle"></i> 
-                ¡Bienvenido{% if current_user and current_user.is_authenticated %}, {{ current_user.nombre }}{% endif %}!
-            </h4>
-            <p class="mb-0">Sistema de Gestión de Consultorio Médico</p>
-        </div>
-    </div>
-</div>
-
 <!-- Estadísticas principales -->
 <div class="row mb-4">
     <div class="col-md-3 mb-3">
-        <div class="card border-0 bg-primary text-white stat-card">
-            <div class="card-body text-center">
-                <div class="stat-icon">
-                    <i class="fas fa-users fa-2x"></i>
+        <div class="card border-0 bg-primary text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6 class="card-title mb-0">Total Pacientes</h6>
+                        <h3 class="mb-0">{{ total_clientes or 0 }}</h3>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-users fa-2x opacity-75"></i>
+                    </div>
                 </div>
-                <h3 class="mb-0">{{ total_clientes or 0 }}</h3>
-                <small>Total Pacientes</small>
             </div>
         </div>
     </div>
     
     <div class="col-md-3 mb-3">
-        <div class="card border-0 bg-success text-white stat-card">
-            <div class="card-body text-center">
-                <div class="stat-icon">
-                    <i class="fas fa-user-md fa-2x"></i>
+        <div class="card border-0 bg-success text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6 class="card-title mb-0">Médicos Activos</h6>
+                        <h3 class="mb-0">{{ total_profesionales or 0 }}</h3>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-user-md fa-2x opacity-75"></i>
+                    </div>
                 </div>
-                <h3 class="mb-0">{{ total_profesionales or 0 }}</h3>
-                <small>Médicos Activos</small>
             </div>
         </div>
     </div>
     
     <div class="col-md-3 mb-3">
-        <div class="card border-0 bg-info text-white stat-card">
-            <div class="card-body text-center">
-                <div class="stat-icon">
-                    <i class="fas fa-briefcase-medical fa-2x"></i>
+        <div class="card border-0 bg-info text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6 class="card-title mb-0">Servicios</h6>
+                        <h3 class="mb-0">{{ total_servicios or 0 }}</h3>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-medical-bag fa-2x opacity-75"></i>
+                    </div>
                 </div>
-                <h3 class="mb-0">{{ total_servicios or 0 }}</h3>
-                <small>Servicios</small>
             </div>
         </div>
     </div>
     
     <div class="col-md-3 mb-3">
-        <div class="card border-0 bg-warning text-white stat-card">
-            <div class="card-body text-center">
-                <div class="stat-icon">
-                    <i class="fas fa-calendar-day fa-2x"></i>
+        <div class="card border-0 bg-warning text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6 class="card-title mb-0">Turnos Hoy</h6>
+                        <h3 class="mb-0">{{ turnos_hoy or 0 }}</h3>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-calendar-day fa-2x opacity-75"></i>
+                    </div>
                 </div>
-                <h3 class="mb-0">{{ turnos_hoy or 0 }}</h3>
-                <small>Turnos Hoy</small>
             </div>
         </div>
     </div>
@@ -80,27 +83,23 @@
             <div class="card-body">
                 <div class="row">
                     <div class="col-md-3 mb-2">
-                        <a href="{{ url_for('turnos.nuevo') }}" class="btn btn-primary btn-lg w-100 action-btn">
-                            <i class="fas fa-calendar-plus"></i>
-                            <span>Nuevo Turno</span>
+                        <a href="{{ url_for('turnos.nuevo') }}" class="btn btn-primary btn-lg w-100">
+                            <i class="fas fa-plus"></i> Nuevo Turno
                         </a>
                     </div>
                     <div class="col-md-3 mb-2">
-                        <a href="{{ url_for('clientes.nuevo') }}" class="btn btn-success btn-lg w-100 action-btn">
-                            <i class="fas fa-user-plus"></i>
-                            <span>Nuevo Paciente</span>
+                        <a href="{{ url_for('clientes.nuevo') }}" class="btn btn-success btn-lg w-100">
+                            <i class="fas fa-user-plus"></i> Nuevo Paciente
                         </a>
                     </div>
                     <div class="col-md-3 mb-2">
-                        <a href="{{ url_for('turnos.calendario') }}" class="btn btn-info btn-lg w-100 action-btn">
-                            <i class="fas fa-calendar-alt"></i>
-                            <span>Ver Calendario</span>
+                        <a href="{{ url_for('turnos.calendario') }}" class="btn btn-info btn-lg w-100">
+                            <i class="fas fa-calendar"></i> Ver Calendario
                         </a>
                     </div>
                     <div class="col-md-3 mb-2">
-                        <button class="btn btn-warning btn-lg w-100 action-btn" onclick="abrirBusquedaRapida()">
-                            <i class="fas fa-search"></i>
-                            <span>Buscar Paciente</span>
+                        <button class="btn btn-warning btn-lg w-100" onclick="buscarPaciente()">
+                            <i class="fas fa-search"></i> Buscar Paciente
                         </button>
                     </div>
                 </div>
@@ -109,9 +108,9 @@
     </div>
 </div>
 
-<!-- Próximos turnos -->
-<div class="row mb-4">
-    <div class="col-12">
+<div class="row">
+    <!-- Próximos turnos -->
+    <div class="col-md-8 mb-4">
         <div class="card">
             <div class="card-header d-flex justify-content-between align-items-center">
                 <h5 class="card-title mb-0">
@@ -124,7 +123,7 @@
             <div class="card-body">
                 {% if proximos_turnos %}
                     <div class="table-responsive">
-                        <table class="table table-sm">
+                        <table class="table table-hover">
                             <thead>
                                 <tr>
                                     <th>Fecha/Hora</th>
@@ -139,11 +138,17 @@
                                 {% for turno in proximos_turnos %}
                                 <tr>
                                     <td>
-                                        <strong>{{ turno.fecha.strftime('%d/%m') }}</strong><br>
-                                        <small>{{ turno.hora.strftime('%H:%M') }}</small>
+                                        <strong>{{ turno.fecha.strftime('%d/%m/%Y') }}</strong><br>
+                                        <small class="text-muted">{{ turno.hora.strftime('%H:%M') }}</small>
                                     </td>
-                                    <td>{{ turno.cliente.nombre_completo }}</td>
-                                    <td>{{ turno.profesional.nombre_completo }}</td>
+                                    <td>
+                                        <i class="fas fa-user"></i>
+                                        {{ turno.cliente.nombre_completo }}
+                                    </td>
+                                    <td>
+                                        <i class="fas fa-user-md"></i>
+                                        {{ turno.profesional.nombre_completo }}
+                                    </td>
                                     <td>{{ turno.servicio.nombre }}</td>
                                     <td>
                                         <span class="badge status-{{ turno.estado }}">
@@ -151,10 +156,16 @@
                                         </span>
                                     </td>
                                     <td>
-                                        <a href="{{ url_for('turnos.detalle', id=turno.id) }}" 
-                                           class="btn btn-sm btn-outline-info">
-                                            <i class="fas fa-eye"></i>
-                                        </a>
+                                        <div class="btn-group btn-group-sm">
+                                            <a href="{{ url_for('turnos.detalle', id=turno.id) }}" 
+                                               class="btn btn-outline-info" title="Ver detalle">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+                                            <a href="{{ url_for('turnos.editar', id=turno.id) }}" 
+                                               class="btn btn-outline-warning" title="Editar">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                        </div>
                                     </td>
                                 </tr>
                                 {% endfor %}
@@ -162,10 +173,10 @@
                         </table>
                     </div>
                 {% else %}
-                    <div class="text-center py-4">
-                        <i class="fas fa-calendar-times fa-3x text-muted mb-3"></i>
-                        <h6 class="text-muted">No hay turnos próximos</h6>
-                        <a href="{{ url_for('turnos.nuevo') }}" class="btn btn-primary btn-sm">
+                    <div class="text-center py-4 text-muted">
+                        <i class="fas fa-calendar-times fa-3x mb-3"></i>
+                        <p>No hay turnos programados próximamente</p>
+                        <a href="{{ url_for('turnos.nuevo') }}" class="btn btn-primary">
                             <i class="fas fa-plus"></i> Programar Turno
                         </a>
                     </div>
@@ -173,283 +184,147 @@
             </div>
         </div>
     </div>
-</div>
 
-<!-- Acceso rápido a módulos -->
-<div class="row">
-    <div class="col-md-6 mb-4">
-        <div class="card h-100">
+    <!-- Panel lateral -->
+    <div class="col-md-4">
+        <!-- Resumen del día -->
+        <div class="card mb-4">
             <div class="card-header">
                 <h6 class="card-title mb-0">
-                    <i class="fas fa-tasks"></i> Gestión
+                    <i class="fas fa-calendar-day"></i> Resumen de Hoy
                 </h6>
             </div>
             <div class="card-body">
-                <div class="list-group list-group-flush">
-                    <a href="{{ url_for('clientes.listar') }}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
-                        <div>
-                            <i class="fas fa-users text-primary"></i>
-                            <span class="ms-2">Gestionar Pacientes</span>
-                        </div>
-                        <span class="badge bg-primary rounded-pill">{{ total_clientes or 0 }}</span>
-                    </a>
-                    <a href="{{ url_for('profesionales.listar') }}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
-                        <div>
-                            <i class="fas fa-user-md text-success"></i>
-                            <span class="ms-2">Gestionar Médicos</span>
-                        </div>
-                        <span class="badge bg-success rounded-pill">{{ total_profesionales or 0 }}</span>
-                    </a>
-                    <a href="{{ url_for('servicios.listar') }}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
-                        <div>
-                            <i class="fas fa-briefcase-medical text-info"></i>
-                            <span class="ms-2">Gestionar Servicios</span>
-                        </div>
-                        <span class="badge bg-info rounded-pill">{{ total_servicios or 0 }}</span>
-                    </a>
-                    <a href="{{ url_for('turnos.listar') }}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
-                        <div>
-                            <i class="fas fa-calendar-alt text-warning"></i>
-                            <span class="ms-2">Gestionar Turnos</span>
-                        </div>
-                        <span class="badge bg-warning rounded-pill">{{ turnos_hoy or 0 }}</span>
-                    </a>
+                <div class="d-flex justify-content-between mb-2">
+                    <span>Turnos totales:</span>
+                    <strong>{{ turnos_hoy or 0 }}</strong>
+                </div>
+                <div class="d-flex justify-content-between mb-2">
+                    <span>Completados:</span>
+                    <span class="text-success">0</span>
+                </div>
+                <div class="d-flex justify-content-between mb-2">
+                    <span>Pendientes:</span>
+                    <span class="text-warning">{{ turnos_hoy or 0 }}</span>
+                </div>
+                <div class="d-flex justify-content-between">
+                    <span>Cancelados:</span>
+                    <span class="text-danger">0</span>
                 </div>
             </div>
         </div>
-    </div>
-    
-    <div class="col-md-6 mb-4">
-        <div class="card h-100">
+
+        <!-- Accesos directos -->
+        <div class="card">
             <div class="card-header">
                 <h6 class="card-title mb-0">
-                    <i class="fas fa-chart-pie"></i> Estadísticas Rápidas
+                    <i class="fas fa-link"></i> Accesos Directos
                 </h6>
             </div>
             <div class="card-body">
-                <div class="row text-center">
-                    <div class="col-6 mb-3">
-                        <div class="stat-widget">
-                            <div class="stat-number text-primary">{{ total_clientes or 0 }}</div>
-                            <div class="stat-label">Pacientes</div>
-                        </div>
-                    </div>
-                    <div class="col-6 mb-3">
-                        <div class="stat-widget">
-                            <div class="stat-number text-success">{{ total_profesionales or 0 }}</div>
-                            <div class="stat-label">Médicos</div>
-                        </div>
-                    </div>
-                    <div class="col-6 mb-3">
-                        <div class="stat-widget">
-                            <div class="stat-number text-info">{{ total_servicios or 0 }}</div>
-                            <div class="stat-label">Servicios</div>
-                        </div>
-                    </div>
-                    <div class="col-6 mb-3">
-                        <div class="stat-widget">
-                            <div class="stat-number text-warning">{{ turnos_hoy or 0 }}</div>
-                            <div class="stat-label">Turnos Hoy</div>
-                        </div>
-                    </div>
+                <div class="d-grid gap-2">
+                    <a href="{{ url_for('clientes.listar') }}" class="btn btn-outline-primary btn-sm">
+                        <i class="fas fa-users"></i> Lista de Pacientes
+                    </a>
+                    <a href="{{ url_for('profesionales.listar') }}" class="btn btn-outline-success btn-sm">
+                        <i class="fas fa-user-md"></i> Lista de Médicos
+                    </a>
+                    <a href="{{ url_for('servicios.listar') }}" class="btn btn-outline-info btn-sm">
+                        <i class="fas fa-medical-bag"></i> Lista de Servicios
+                    </a>
+                    <a href="{{ url_for('turnos.calendario') }}" class="btn btn-outline-warning btn-sm">
+                        <i class="fas fa-calendar"></i> Calendario
+                    </a>
                 </div>
             </div>
         </div>
     </div>
 </div>
 
-<!-- Modal de búsqueda rápida -->
+<!-- Modal para búsqueda rápida -->
 <div class="modal fade" id="modalBusqueda" tabindex="-1">
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title">
-                    <i class="fas fa-search"></i> Búsqueda Rápida de Pacientes
+                    <i class="fas fa-search"></i> Buscar Paciente
                 </h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
                 <div class="mb-3">
-                    <input type="text" class="form-control" id="busquedaRapida" 
-                           placeholder="Escriba el nombre, apellido o email del paciente...">
+                    <label for="busquedaInput" class="form-label">Nombre, apellido, email o teléfono:</label>
+                    <input type="text" class="form-control" id="busquedaInput" 
+                           placeholder="Ingrese el término de búsqueda..." onkeyup="buscarEnTiempoReal()">
                 </div>
-                <div id="resultadosBusqueda">
-                    <div class="text-center text-muted">
-                        <i class="fas fa-search fa-2x"></i>
-                        <p>Escriba para buscar pacientes</p>
-                    </div>
-                </div>
+                <div id="resultadosBusqueda"></div>
             </div>
         </div>
     </div>
 </div>
+{% endblock %}
 
-<style>
-.stat-card {
-    transition: transform 0.3s, box-shadow 0.3s;
-}
-
-.stat-card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 8px 25px rgba(0,0,0,0.15);
-}
-
-.stat-icon {
-    margin-bottom: 1rem;
-    opacity: 0.8;
-}
-
-.action-btn {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    padding: 1.5rem 1rem;
-    transition: all 0.3s;
-    text-decoration: none;
-}
-
-.action-btn:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 5px 15px rgba(0,0,0,0.2);
-}
-
-.action-btn i {
-    font-size: 2rem;
-    margin-bottom: 0.5rem;
-}
-
-.stat-widget {
-    padding: 0.5rem;
-}
-
-.stat-number {
-    font-size: 2rem;
-    font-weight: bold;
-}
-
-.stat-label {
-    font-size: 0.9rem;
-    color: #6c757d;
-}
-
-.status-pendiente { background-color: #ffc107; color: #000; }
-.status-confirmado { background-color: #17a2b8; }
-.status-completado { background-color: #28a745; }
-.status-cancelado { background-color: #dc3545; }
-
-.list-group-item {
-    border-left: none;
-    border-right: none;
-}
-
-.list-group-item:first-child {
-    border-top: none;
-}
-
-.list-group-item:last-child {
-    border-bottom: none;
-}
-</style>
-
+{% block extra_js %}
 <script>
-function abrirBusquedaRapida() {
+function buscarPaciente() {
     const modal = new bootstrap.Modal(document.getElementById('modalBusqueda'));
     modal.show();
-    
-    // Focus en el campo de búsqueda cuando se abre el modal
-    document.getElementById('modalBusqueda').addEventListener('shown.bs.modal', function () {
-        document.getElementById('busquedaRapida').focus();
-    });
+    document.getElementById('busquedaInput').focus();
 }
 
-// Búsqueda en tiempo real
-document.getElementById('busquedaRapida').addEventListener('input', function() {
-    const query = this.value.trim();
+function buscarEnTiempoReal() {
+    const query = document.getElementById('busquedaInput').value;
     const resultados = document.getElementById('resultadosBusqueda');
     
     if (query.length < 2) {
-        resultados.innerHTML = `
-            <div class="text-center text-muted">
-                <i class="fas fa-search fa-2x"></i>
-                <p>Escriba al menos 2 caracteres para buscar</p>
-            </div>
-        `;
+        resultados.innerHTML = '';
         return;
     }
     
-    // Mostrar indicador de carga
+    // Simular búsqueda (reemplazar con llamada AJAX real)
     resultados.innerHTML = `
         <div class="text-center">
-            <div class="spinner-border text-primary" role="status">
+            <div class="spinner-border spinner-border-sm" role="status">
                 <span class="visually-hidden">Buscando...</span>
             </div>
-            <p>Buscando pacientes...</p>
+            <p class="mt-2">Buscando pacientes...</p>
         </div>
     `;
     
-    // Realizar búsqueda AJAX
-    fetch(`/clientes/buscar?q=${encodeURIComponent(query)}&limit=10`)
+    // AJAX call (implementar según tu API)
+    fetch(`/clientes/buscar?q=${encodeURIComponent(query)}`)
         .then(response => response.json())
         .then(data => {
             if (data.length === 0) {
-                resultados.innerHTML = `
-                    <div class="text-center text-muted">
-                        <i class="fas fa-user-slash fa-2x"></i>
-                        <p>No se encontraron pacientes con "${query}"</p>
-                        <a href="/clientes/nuevo" class="btn btn-sm btn-primary">
-                            <i class="fas fa-plus"></i> Crear Nuevo Paciente
+                resultados.innerHTML = '<p class="text-muted">No se encontraron pacientes.</p>';
+            } else {
+                let html = '<div class="list-group">';
+                data.forEach(cliente => {
+                    html += `
+                        <a href="/clientes/${cliente.id}" class="list-group-item list-group-item-action">
+                            <div class="d-flex w-100 justify-content-between">
+                                <h6 class="mb-1">${cliente.nombre} ${cliente.apellido}</h6>
+                                <small>ID: ${cliente.id}</small>
+                            </div>
+                            <p class="mb-1">${cliente.email || 'Sin email'}</p>
+                            <small>${cliente.telefono || 'Sin teléfono'}</small>
                         </a>
-                    </div>
-                `;
-                return;
+                    `;
+                });
+                html += '</div>';
+                resultados.innerHTML = html;
             }
-            
-            let html = '<div class="list-group">';
-            data.forEach(cliente => {
-                html += `
-                    <a href="/clientes/${cliente.id}" class="list-group-item list-group-item-action">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <div>
-                                <strong>${cliente.nombre} ${cliente.apellido}</strong>
-                                ${cliente.email ? `<br><small class="text-muted">${cliente.email}</small>` : ''}
-                                ${cliente.telefono ? `<br><small class="text-muted">${cliente.telefono}</small>` : ''}
-                            </div>
-                            <div class="btn-group btn-group-sm">
-                                <a href="/clientes/${cliente.id}" class="btn btn-outline-info" title="Ver perfil">
-                                    <i class="fas fa-eye"></i>
-                                </a>
-                                <a href="/turnos/nuevo?cliente_id=${cliente.id}" class="btn btn-outline-success" title="Nuevo turno">
-                                    <i class="fas fa-calendar-plus"></i>
-                                </a>
-                            </div>
-                        </div>
-                    </a>
-                `;
-            });
-            html += '</div>';
-            
-            resultados.innerHTML = html;
         })
         .catch(error => {
-            console.error('Error en búsqueda:', error);
-            resultados.innerHTML = `
-                <div class="alert alert-danger">
-                    <i class="fas fa-exclamation-triangle"></i>
-                    Error al realizar la búsqueda. Intente nuevamente.
-                </div>
-            `;
+            console.error('Error:', error);
+            resultados.innerHTML = '<p class="text-danger">Error al buscar pacientes.</p>';
         });
-});
+}
 
-// Limpiar búsqueda cuando se cierra el modal
-document.getElementById('modalBusqueda').addEventListener('hidden.bs.modal', function () {
-    document.getElementById('busquedaRapida').value = '';
-    document.getElementById('resultadosBusqueda').innerHTML = `
-        <div class="text-center text-muted">
-            <i class="fas fa-search fa-2x"></i>
-            <p>Escriba para buscar pacientes</p>
-        </div>
-    `;
-});
+// Actualizar estadísticas cada 30 segundos
+setInterval(() => {
+    // Implementar actualización de estadísticas en tiempo real
+    console.log('Actualizando estadísticas...');
+}, 30000);
 </script>
 {% endblock %}

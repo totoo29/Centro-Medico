@@ -104,7 +104,7 @@
     <!-- Sidebar -->
     <nav class="sidebar" id="sidebar">
         <div class="logo">
-            <h4><i class="fas fa-stethoscope"></i> Centro Médico</h4>
+            <h4><i class="fas fa-stethoscope"></i> Consultorio Médico</h4>
         </div>
         
         <!-- Información del usuario - CON VERIFICACIÓN -->
@@ -132,8 +132,8 @@
             <li class="nav-item">
                 <a class="nav-link" href="{{ url_for('main.index') }}">
                     <i class="fas fa-tachometer-alt"></i> Dashboard
-                </a>
-            </li>
+            </a>
+        </li>
             
             {% if current_user and current_user.is_authenticated %}
             <li class="nav-item">
@@ -148,6 +148,11 @@
                 </a>
             </li>
             
+            <li class="nav-item">
+                <a class="nav-link" href="{{ url_for('categorias.listar') if url_for else '#' }}">
+                    <i class="fas fa-tags"></i> Categorías
+                </a>
+            </li>
             <li class="nav-item">
                 <a class="nav-link" href="{{ url_for('servicios.listar') if url_for else '#' }}">
                     <i class="fas fa-briefcase-medical"></i> Servicios

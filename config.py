@@ -58,8 +58,17 @@ class DevelopmentConfig(Config):
 class ProductionConfig(Config):
     """Configuración para producción"""
     DEBUG = False
+    # PostgreSQL para producción
     SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL') or \
-        'sqlite:///' + os.path.join(os.path.dirname(os.path.abspath(__file__)), 'consultorio_prod.db')
+        'postgresql://usuario:password@localhost/consultorio_prod'
+
+class PostgreSQLConfig(Config):
+    """Configuración específica para PostgreSQL"""
+    DEBUG = True
+    SQLALCHEMY_ECHO = True
+    # Formato: postgresql://usuario:password@host:puerto/nombre_db
+    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL') or \
+        'postgresql://postgres:password@localhost:5432/consultorio_dev'
 
 class TestingConfig(Config):
     """Configuración para testing"""
@@ -71,6 +80,7 @@ class TestingConfig(Config):
 config = {
     'development': DevelopmentConfig,
     'production': ProductionConfig,
+    'postgresql': PostgreSQLConfig,
     'testing': TestingConfig,
     'default': DevelopmentConfig
 }

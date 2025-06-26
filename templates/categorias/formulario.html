@@ -1,0 +1,199 @@
+{% extends "base.html" %}
+
+{% block title %}
+    {% if categoria %}Editar Categoría{% else %}Nueva Categoría{% endif %} - Consultorio Médico
+{% endblock %}
+
+{% block page_title %}
+    {% if categoria %}Editar Categoría{% else %}Nueva Categoría{% endif %}
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-{% if categoria %}edit{% else %}plus{% endif %}"></i>
+                    {% if categoria %}Editar Categoría - {{ categoria.nombre }}{% else %}Agregar Nueva Categoría{% endif %}
+                </h5>
+            </div>
+            <div class="card-body">
+                <!-- FORMULARIO SIMPLE SIN JAVASCRIPT -->
+                <form method="POST" 
+                      action="{% if categoria %}{{ url_for('categorias.actualizar', id=categoria.id) }}{% else %}{{ url_for('categorias.crear') }}{% endif %}">
+                    
+                    <!-- Nombre de la categoría -->
+                    <div class="mb-3">
+                        <label for="nombre" class="form-label">
+                            <i class="fas fa-tag"></i> Nombre de la Categoría <span class="text-danger">*</span>
+                        </label>
+                        <input type="text" class="form-control" id="nombre" name="nombre" 
+                               value="{{ categoria.nombre if categoria else '' }}" required
+                               placeholder="Ej: Consultas Generales, Especialidades...">
+                    </div>
+
+                    <!-- Descripción -->
+                    <div class="mb-3">
+                        <label for="descripcion" class="form-label">
+                            <i class="fas fa-align-left"></i> Descripción
+                        </label>
+                        <textarea class="form-control" id="descripcion" name="descripcion" rows="3"
+                                  placeholder="Descripción de la categoría...">{{ categoria.descripcion if categoria else '' }}</textarea>
+                        <div class="form-text">Opcional: descripción para organizar mejor los servicios</div>
+                    </div>
+
+                    <!-- Color -->
+                    <div class="mb-3">
+                        <label for="color" class="form-label">
+                            <i class="fas fa-palette"></i> Color de la Categoría
+                        </label>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <input type="color" class="form-control form-control-color" id="color" name="color" 
+                                       value="{{ categoria.color if categoria else '#007bff' }}" title="Seleccionar color">
+                            </div>
+                            <div class="col-md-6">
+                                <div class="color-preview p-2 rounded text-center text-white" id="colorPreview">
+                                    Vista previa del color
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-text">El color ayuda a identificar visualmente la categoría</div>
+                    </div>
+
+                    <!-- Vista previa de la categoría -->
+                    <div class="mb-3">
+                        <div class="card bg-light">
+                            <div class="card-body">
+                                <h6 class="card-title">
+                                    <i class="fas fa-eye"></i> Vista Previa de la Categoría
+                                </h6>
+                                <div class="category-preview p-3 rounded text-center" id="categoryPreview">
+                                    <div class="category-badge" id="previewBadge">
+                                        <i class="fas fa-tag"></i> <span id="previewName">Nombre de la categoría</span>
+                                    </div>
+                                    <p class="mt-2 mb-0" id="previewDescription">Descripción de la categoría</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Botones de acción -->
+                    <div class="d-flex justify-content-between">
+                        <a href="{{ url_for('categorias.listar') }}" class="btn btn-secondary">
+                            <i class="fas fa-arrow-left"></i> Volver a la Lista
+                        </a>
+                        
+                        <div>
+                            {% if categoria %}
+                                <a href="{{ url_for('categorias.listar') }}" class="btn btn-outline-info me-2">
+                                    <i class="fas fa-list"></i> Ver Lista
+                                </a>
+                            {% endif %}
+                            
+                            <button type="submit" class="btn btn-success">
+                                <i class="fas fa-save"></i> 
+                                {% if categoria %}Actualizar Categoría{% else %}Guardar Categoría{% endif %}
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Información adicional -->
+        <div class="card mt-4">
+            <div class="card-body">
+                <h6 class="card-title">
+                    <i class="fas fa-lightbulb"></i> Sugerencias para Categorías
+                </h6>
+                <ul class="mb-0 small">
+                    <li><strong>Consultas Generales:</strong> Para consultas médicas básicas y chequeos</li>
+                    <li><strong>Especialidades:</strong> Para consultas con médicos especialistas</li>
+                    <li><strong>Estudios y Análisis:</strong> Para laboratorio y estudios médicos</li>
+                    <li><strong>Procedimientos:</strong> Para tratamientos y procedimientos médicos</li>
+                    <li><strong>Controles:</strong> Para seguimientos y controles post-operatorios</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.form-control-color {
+    width: 60px;
+    height: 40px;
+    border-radius: 8px;
+    border: 2px solid #dee2e6;
+    cursor: pointer;
+}
+
+.color-preview {
+    background-color: #007bff;
+    border: 2px solid #dee2e6;
+    min-height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 500;
+}
+
+.category-preview {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border: 1px dashed #dee2e6;
+}
+
+.category-badge {
+    display: inline-block;
+    padding: 8px 16px;
+    border-radius: 20px;
+    background-color: #007bff;
+    color: white;
+    font-size: 1rem;
+    font-weight: 500;
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Elementos del formulario
+    const nombreInput = document.getElementById('nombre');
+    const descripcionInput = document.getElementById('descripcion');
+    const colorInput = document.getElementById('color');
+    
+    // Elementos de vista previa
+    const colorPreview = document.getElementById('colorPreview');
+    const previewBadge = document.getElementById('previewBadge');
+    const previewName = document.getElementById('previewName');
+    const previewDescription = document.getElementById('previewDescription');
+    
+    // Actualizar vista previa cuando cambian los campos
+    function actualizarVistaPrevia() {
+        const nombre = nombreInput.value.trim() || 'Nombre de la categoría';
+        const descripcion = descripcionInput.value.trim() || 'Descripción de la categoría';
+        const color = colorInput.value;
+        
+        // Actualizar vista previa del color
+        colorPreview.style.backgroundColor = color;
+        
+        // Actualizar badge de categoría
+        previewBadge.style.backgroundColor = color;
+        previewName.textContent = nombre;
+        previewDescription.textContent = descripcion;
+    }
+    
+    // Event listeners
+    nombreInput.addEventListener('input', actualizarVistaPrevia);
+    descripcionInput.addEventListener('input', actualizarVistaPrevia);
+    colorInput.addEventListener('input', actualizarVistaPrevia);
+    
+    // Actualizar vista previa inicial
+    actualizarVistaPrevia();
+});
+</script>
+{% endblock %}
