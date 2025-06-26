@@ -262,3 +262,45 @@ def reporte():
     except Exception as e:
         flash(f'Error al generar reporte: {str(e)}', 'error')
         return redirect(url_for('turnos.listar'))
+
+@turnos_bp.route('/horarios-disponibles')
+@login_required
+def horarios_disponibles():
+    """API para obtener horarios disponibles"""
+    fecha = request.args.get('fecha')
+    profesional_id = request.args.get('profesional_id', type=int)
+    servicio_id = request.args.get('servicio_id', type=int)
+    
+    if not fecha or not profesional_id:
+        return jsonify({'error': 'Fecha y profesional son requeridos'}), 400
+    
+    try:
+        # Validar formato de fecha
+        from datetime import datetime
+        fecha_obj = datetime.strptime(fecha, '%Y-%m-%d').date()
+        
+        # Obtener horarios básicos (esto se puede mejorar con lógica más compleja)
+        horarios_base = [
+            '08:00', '08:30', '09:00', '09:30', '10:00', '10:30',
+            '11:00', '11:30', '12:00', '12:30', '13:00', '13:30',
+            '14:00', '14:30', '15:00', '15:30', '16:00', '16:30',
+            '17:00', '17:30', '18:00'
+        ]
+        
+        # Obtener turnos ocupados para esa fecha y profesional
+        turnos_ocupados = Turno.query.filter(
+            Turno.profesional_id == profesional_id,
+            Turno.fecha == fecha_obj,
+            Turno.estado.in_(['pendiente', 'confirmado'])
+        ).all()
+        
+        # Filtrar horarios ocupados
+        horarios_ocupados = [turno.hora.strftime('%H:%M') for turno in turnos_ocupados]
+        horarios_disponibles = [h for h in horarios_base if h not in horarios_ocupados]
+        
+        return jsonify({'horarios': horarios_disponibles})
+        
+    except ValueError:
+        return jsonify({'error': 'Formato de fecha inválido'}), 400
+    except Exception as e:
+        return jsonify({'error': 'Error interno del servidor'}), 500

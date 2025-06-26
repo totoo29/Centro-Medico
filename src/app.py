@@ -1,9 +1,11 @@
+# src/app.py - Versión actualizada con filtros corregidos
 from flask import Flask, render_template, redirect, url_for
 from flask_login import current_user
 from src.database import init_db
 from src.routes import register_blueprints
 from src.auth import init_auth
 from config import Config
+from datetime import datetime, date
 
 def create_app(config=None):
     """Factory para crear la aplicación Flask"""
@@ -26,9 +28,13 @@ def create_app(config=None):
     # SOLUCIÓN: Hacer current_user disponible globalmente en plantillas
     @app.context_processor
     def inject_user():
-        """Inyectar current_user en todas las plantillas"""
+        """Inyectar current_user y fecha actual en todas las plantillas"""
         from flask_login import current_user
-        return dict(current_user=current_user)
+        return dict(
+            current_user=current_user,
+            today=date.today(),
+            now=datetime.now()
+        )
     
     # Registrar blueprints
     register_blueprints(app)
@@ -53,18 +59,33 @@ def register_template_filters(app):
     try:
         from src.utils.helpers import (
             formatear_telefono, formatear_precio, formatear_fecha, 
-            formatear_hora, capitalizar_nombre
+            formatear_hora, capitalizar_nombre, formatear_fecha_personalizada,
+            fecha_hoy_iso, es_fecha_pasada, dias_hasta_fecha
         )
         
+        # Filtros básicos
         app.jinja_env.filters['telefono'] = formatear_telefono
         app.jinja_env.filters['precio'] = formatear_precio
         app.jinja_env.filters['fecha'] = formatear_fecha
         app.jinja_env.filters['hora'] = formatear_hora
         app.jinja_env.filters['capitalizar'] = capitalizar_nombre
-        print("✅ Filtros de plantillas registrados")
+        
+        # NUEVO: Filtros de fecha mejorados
+        app.jinja_env.filters['date'] = formatear_fecha_personalizada
+        app.jinja_env.filters['fecha_personalizada'] = formatear_fecha_personalizada
+        app.jinja_env.filters['es_pasada'] = es_fecha_pasada
+        app.jinja_env.filters['dias_hasta'] = dias_hasta_fecha
+        
+        # Funciones globales para plantillas
+        app.jinja_env.globals['fecha_hoy_iso'] = fecha_hoy_iso
+        app.jinja_env.globals['date_today'] = lambda: date.today().isoformat()
+        
+        print("✅ Filtros de plantillas registrados correctamente")
+        
     except ImportError as e:
         print(f"⚠️ Error importando filtros: {e}")
         # Definir filtros básicos como fallback
+        
         @app.template_filter('telefono')
         def telefono_filter(s):
             return s or ''
@@ -72,6 +93,29 @@ def register_template_filters(app):
         @app.template_filter('precio')
         def precio_filter(s):
             return f'${s:.2f}' if s else '$0.00'
+        
+        @app.template_filter('date')
+        def date_filter(fecha_obj, formato='%Y-%m-%d'):
+            """Filtro de fecha con fallback"""
+            if not fecha_obj:
+                return ''
+            
+            if isinstance(fecha_obj, str):
+                if fecha_obj == 'now':
+                    return datetime.now().strftime(formato)
+                elif fecha_obj == 'today':
+                    return date.today().strftime(formato)
+                return fecha_obj
+            
+            if isinstance(fecha_obj, (datetime, date)):
+                return fecha_obj.strftime(formato)
+            
+            return str(fecha_obj)
+        
+        # Función global para fecha de hoy
+        app.jinja_env.globals['date_today'] = lambda: date.today().isoformat()
+        
+        print("⚠️ Usando filtros básicos de fallback")
 
 def register_error_handlers(app):
     """Registrar manejadores de errores"""

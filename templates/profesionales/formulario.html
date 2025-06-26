@@ -56,15 +56,17 @@
                                 <option value="Cardiología" {% if profesional and profesional.especialidad == 'Cardiología' %}selected{% endif %}>Cardiología</option>
                                 <option value="Dermatología" {% if profesional and profesional.especialidad == 'Dermatología' %}selected{% endif %}>Dermatología</option>
                                 <option value="Endocrinología" {% if profesional and profesional.especialidad == 'Endocrinología' %}selected{% endif %}>Endocrinología</option>
+                                <option value="Fonoaudiología" {% if profesional and profesional.especialidad == 'Fonoaudiología' %}selected{% endif %}>Fonoaudiología</option>
                                 <option value="Gastroenterología" {% if profesional and profesional.especialidad == 'Gastroenterología' %}selected{% endif %}>Gastroenterología</option>
                                 <option value="Ginecología" {% if profesional and profesional.especialidad == 'Ginecología' %}selected{% endif %}>Ginecología</option>
+                                <option value="Neumonología" {% if profesional and profesional.especialidad == 'Neumonología' %}selected{% endif %}>Neumonología</option>
                                 <option value="Neurología" {% if profesional and profesional.especialidad == 'Neurología' %}selected{% endif %}>Neurología</option>
                                 <option value="Oftalmología" {% if profesional and profesional.especialidad == 'Oftalmología' %}selected{% endif %}>Oftalmología</option>
                                 <option value="Pediatría" {% if profesional and profesional.especialidad == 'Pediatría' %}selected{% endif %}>Pediatría</option>
                                 <option value="Psiquiatría" {% if profesional and profesional.especialidad == 'Psiquiatría' %}selected{% endif %}>Psiquiatría</option>
                                 <option value="Traumatología" {% if profesional and profesional.especialidad == 'Traumatología' %}selected{% endif %}>Traumatología</option>
                                 <option value="Urología" {% if profesional and profesional.especialidad == 'Urología' %}selected{% endif %}>Urología</option>
-                                <option value="Otro" {% if profesional and profesional.especialidad and profesional.especialidad not in ['Médico Clínico', 'Cardiología', 'Dermatología', 'Endocrinología', 'Gastroenterología', 'Ginecología', 'Neurología', 'Oftalmología', 'Pediatría', 'Psiquiatría', 'Traumatología', 'Urología'] %}selected{% endif %}>Otro</option>
+                                <option value="Otro" {% if profesional and profesional.especialidad and profesional.especialidad not in ['Médico Clínico', 'Cardiología', 'Dermatología', 'Endocrinología', 'Fonoaudiología', 'Gastroenterología', 'Ginecología', 'Neumonología', 'Neurología', 'Oftalmología', 'Pediatría', 'Psiquiatría', 'Traumatología', 'Urología'] %}selected{% endif %}>Otro</option>
                             </select>
                             <div class="form-text">Especialidad médica principal</div>
                         </div>

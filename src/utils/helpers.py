@@ -1,3 +1,4 @@
+# src/utils/helpers.py - Versión actualizada con filtros de fecha
 import re
 from datetime import datetime, date
 
@@ -203,3 +204,96 @@ def convertir_a_slug(texto):
     slug = slug.strip('-')
     
     return slug
+
+# NUEVO: Filtros para Jinja2
+def fecha_hoy_iso():
+    """Obtener la fecha de hoy en formato ISO (YYYY-MM-DD)"""
+    return date.today().isoformat()
+
+def fecha_manana_iso():
+    """Obtener la fecha de mañana en formato ISO"""
+    from datetime import timedelta
+    return (date.today() + timedelta(days=1)).isoformat()
+
+def formatear_fecha_personalizada(fecha_obj, formato='%Y-%m-%d'):
+    """Formatear fecha con formato personalizado"""
+    if not fecha_obj:
+        return ''
+    
+    if isinstance(fecha_obj, str):
+        if fecha_obj == 'now':
+            fecha_obj = datetime.now()
+        elif fecha_obj == 'today':
+            fecha_obj = date.today()
+        else:
+            try:
+                fecha_obj = datetime.fromisoformat(fecha_obj)
+            except ValueError:
+                return fecha_obj
+    
+    if isinstance(fecha_obj, (datetime, date)):
+        return fecha_obj.strftime(formato)
+    
+    return str(fecha_obj)
+
+def es_fecha_pasada(fecha):
+    """Verificar si una fecha ya pasó"""
+    if not fecha:
+        return False
+    
+    if isinstance(fecha, str):
+        try:
+            fecha = datetime.strptime(fecha, '%Y-%m-%d').date()
+        except ValueError:
+            return False
+    
+    if isinstance(fecha, datetime):
+        fecha = fecha.date()
+    
+    return fecha < date.today()
+
+def dias_hasta_fecha(fecha):
+    """Calcular días hasta una fecha"""
+    if not fecha:
+        return None
+    
+    if isinstance(fecha, str):
+        try:
+            fecha = datetime.strptime(fecha, '%Y-%m-%d').date()
+        except ValueError:
+            return None
+    
+    if isinstance(fecha, datetime):
+        fecha = fecha.date()
+    
+    if isinstance(fecha, date):
+        delta = fecha - date.today()
+        return delta.days
+    
+    return None
+
+def fecha_hoy_iso():
+    """Retorna la fecha de hoy en formato ISO (YYYY-MM-DD)"""
+    return date.today().isoformat()
+
+def fecha_manana_iso():
+    """Retorna la fecha de mañana en formato ISO"""
+    from datetime import timedelta
+    return (date.today() + timedelta(days=1)).isoformat()
+
+def formatear_fecha_jinja(fecha_obj, formato='%Y-%m-%d'):
+    """Filtro de fecha para Jinja2"""
+    if not fecha_obj:
+        return ''
+    
+    if isinstance(fecha_obj, str):
+        if fecha_obj == 'now':
+            return datetime.now().strftime(formato)
+        elif fecha_obj == 'today':
+            return date.today().strftime(formato)
+        return fecha_obj
+    
+    if isinstance(fecha_obj, (datetime, date)):
+        return fecha_obj.strftime(formato)
+    
+    return str(fecha_obj)

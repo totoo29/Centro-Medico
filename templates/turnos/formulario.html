@@ -30,7 +30,7 @@
                             </label>
                             <input type="date" class="form-control" id="fecha" name="fecha" 
                                    value="{{ turno.fecha.isoformat() if turno else '' }}" required
-                                   min="{{ "now"|date('%Y-%m-%d') }}">
+                                   min="{{ date_today() }}">
                             <div class="invalid-feedback"></div>
                         </div>
 
@@ -41,6 +41,9 @@
                             </label>
                             <select class="form-select" id="hora" name="hora" required>
                                 <option value="">Seleccione una hora</option>
+                                {% if turno %}
+                                    <option value="{{ turno.hora.strftime('%H:%M') }}" selected>{{ turno.hora.strftime('%H:%M') }}</option>
+                                {% endif %}
                             </select>
                             <div class="form-text">Horarios disponibles según el médico</div>
                             <div class="invalid-feedback"></div>
@@ -78,6 +81,11 @@
                                     </option>
                                 {% endfor %}
                             </select>
+                            <div class="form-text">
+                                <a href="{{ url_for('clientes.nuevo') }}" target="_blank" class="text-decoration-none">
+                                    <i class="fas fa-plus"></i> Crear nuevo paciente
+                                </a>
+                            </div>
                             <div class="invalid-feedback"></div>
                         </div>
 
@@ -190,6 +198,21 @@
                         </div>
                     </div>
 
+                    <!-- Alertas y sugerencias -->
+                    <div class="row mb-3">
+                        <div class="col-12">
+                            <div class="alert alert-info">
+                                <h6><i class="fas fa-lightbulb"></i> Sugerencias para Programar Turnos</h6>
+                                <ul class="mb-0">
+                                    <li>Verifique la disponibilidad del médico antes de confirmar</li>
+                                    <li>La duración del turno se calcula automáticamente según el servicio</li>
+                                    <li>Puede ajustar el precio final si es diferente al precio estándar</li>
+                                    <li>Las observaciones son útiles para recordatorios especiales</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
                     <!-- Botones de acción -->
                     <div class="row">
                         <div class="col-12">
@@ -227,6 +250,16 @@
 {% block extra_js %}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    // Establecer fecha mínima (hoy)
+    const fechaInput = document.getElementById('fecha');
+    const hoy = new Date().toISOString().split('T')[0];
+    fechaInput.min = hoy;
+    
+    // Si no hay fecha establecida, usar hoy
+    if (!fechaInput.value) {
+        fechaInput.value = hoy;
+    }
+
     // Actualizar resumen cuando cambian los campos
     ['fecha', 'hora', 'cliente_id', 'profesional_id', 'servicio_id', 'precio_final'].forEach(id => {
         const campo = document.getElementById(id);
@@ -288,7 +321,7 @@ function actualizarResumen() {
         const servicioOption = servicioSelect.selectedOptions[0];
         const precioServicio = servicioOption.getAttribute('data-precio');
         const precio = precioFinal || precioServicio;
-        servicioTexto = servicioOption.text.split(' - ')[0] + ` - $${precio}`;
+        servicioTexto = servicioOption.text.split(' - ')[0] + ` - ${precio}`;
     }
     document.getElementById('resumenServicio').textContent = servicioTexto;
 }
@@ -306,7 +339,7 @@ function actualizarInfoServicio() {
         infoDiv.innerHTML = `
             <div class="d-flex justify-content-between">
                 <span><i class="fas fa-clock"></i> Duración: ${duracion} minutos</span>
-                <span><i class="fas fa-dollar-sign"></i> Precio: $${precio}</span>
+                <span><i class="fas fa-dollar-sign"></i> Precio: ${precio}</span>
             </div>
         `;
 
@@ -317,6 +350,9 @@ function actualizarInfoServicio() {
     } else {
         infoDiv.innerHTML = '<small class="text-muted">Seleccione un servicio para ver la información</small>';
     }
+
+    // Actualizar resumen
+    actualizarResumen();
 }
 
 function cargarHorariosDisponibles() {
@@ -324,6 +360,7 @@ function cargarHorariosDisponibles() {
     const profesionalId = document.getElementById('profesional_id').value;
     const servicioId = document.getElementById('servicio_id').value;
     const horaSelect = document.getElementById('hora');
+    const horaActual = horaSelect.value; // Guardar selección actual
     
     // Limpiar opciones actuales
     horaSelect.innerHTML = '<option value="">Seleccione una hora</option>';
@@ -337,7 +374,9 @@ function cargarHorariosDisponibles() {
     horaSelect.innerHTML = '<option value="">Cargando horarios...</option>';
     
     // Realizar petición AJAX para obtener horarios disponibles
-    fetch(`/turnos/horarios-disponibles?fecha=${fecha}&profesional_id=${profesionalId}&servicio_id=${servicioId}`)
+    const url = `/turnos/horarios-disponibles?fecha=${fecha}&profesional_id=${profesionalId}${servicioId ? '&servicio_id=' + servicioId : ''}`;
+    
+    fetch(url)
         .then(response => response.json())
         .then(data => {
             horaSelect.innerHTML = '<option value="">Seleccione una hora</option>';
@@ -347,6 +386,12 @@ function cargarHorariosDisponibles() {
                     const option = document.createElement('option');
                     option.value = hora;
                     option.textContent = hora;
+                    
+                    // Mantener selección anterior si sigue disponible
+                    if (hora === horaActual) {
+                        option.selected = true;
+                    }
+                    
                     horaSelect.appendChild(option);
                 });
             } else {
@@ -359,7 +404,171 @@ function cargarHorariosDisponibles() {
         })
         .finally(() => {
             horaSelect.disabled = false;
+            actualizarResumen();
         });
 }
+
+function limpiarFormulario() {
+    if (confirm('¿Está seguro de que desea limpiar todos los campos?')) {
+        const form = document.getElementById('formTurno');
+        form.reset();
+        
+        // Establecer fecha de hoy nuevamente
+        const fechaInput = document.getElementById('fecha');
+        fechaInput.value = new Date().toISOString().split('T')[0];
+        
+        // Limpiar horarios
+        const horaSelect = document.getElementById('hora');
+        horaSelect.innerHTML = '<option value="">Seleccione una hora</option>';
+        
+        // Limpiar información del servicio
+        document.getElementById('infoServicio').innerHTML = 
+            '<small class="text-muted">Seleccione un servicio para ver la información</small>';
+        
+        // Actualizar resumen
+        actualizarResumen();
+        
+        // Focus en primer campo
+        document.getElementById('fecha').focus();
+    }
+}
+
+function validarFormulario() {
+    const camposRequeridos = ['fecha', 'hora', 'cliente_id', 'profesional_id', 'servicio_id'];
+    let esValido = true;
+    
+    camposRequeridos.forEach(id => {
+        const campo = document.getElementById(id);
+        const valor = campo.value.trim();
+        
+        // Limpiar estilos anteriores
+        campo.classList.remove('is-invalid');
+        
+        if (!valor) {
+            campo.classList.add('is-invalid');
+            esValido = false;
+        }
+    });
+    
+    // Validar que la fecha no sea en el pasado
+    const fecha = document.getElementById('fecha').value;
+    if (fecha) {
+        const fechaSeleccionada = new Date(fecha);
+        const hoy = new Date();
+        hoy.setHours(0, 0, 0, 0);
+        
+        if (fechaSeleccionada < hoy) {
+            document.getElementById('fecha').classList.add('is-invalid');
+            alert('No puede seleccionar una fecha en el pasado');
+            esValido = false;
+        }
+    }
+    
+    return esValido;
+}
+
+// Envío del formulario
+document.getElementById('formTurno').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    if (!validarFormulario()) {
+        alert('Por favor, complete todos los campos obligatorios correctamente');
+        return;
+    }
+    
+    const btnGuardar = document.getElementById('btnGuardar');
+    const textoOriginal = btnGuardar.innerHTML;
+    
+    // Mostrar loading
+    btnGuardar.innerHTML = '<span class="spinner-border spinner-border-sm" role="status"></span> Guardando...';
+    btnGuardar.disabled = true;
+    
+    // Enviar formulario
+    const formData = new FormData(this);
+    
+    fetch(this.action, {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
+    .then(response => {
+        if (response.redirected) {
+            window.location.href = response.url;
+        } else {
+            return response.json();
+        }
+    })
+    .then(data => {
+        if (data && data.success) {
+            // Mostrar mensaje de éxito
+            showAlert('Turno guardado exitosamente', 'success');
+            
+            // Redirigir después de un momento
+            setTimeout(() => {
+                window.location.href = "/turnos";
+            }, 1500);
+        } else if (data && data.error) {
+            showAlert('Error: ' + data.error, 'danger');
+            btnGuardar.innerHTML = textoOriginal;
+            btnGuardar.disabled = false;
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showAlert('Error de conexión. Por favor, intente nuevamente.', 'danger');
+        btnGuardar.innerHTML = textoOriginal;
+        btnGuardar.disabled = false;
+    });
+});
+
+function showAlert(message, type) {
+    const alertDiv = document.createElement('div');
+    alertDiv.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
+    alertDiv.style.cssText = 'top: 20px; right: 20px; z-index: 9999; max-width: 400px;';
+    alertDiv.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    
+    document.body.appendChild(alertDiv);
+    
+    // Auto-remove después de 5 segundos
+    setTimeout(() => {
+        if (alertDiv.parentNode) {
+            alertDiv.parentNode.removeChild(alertDiv);
+        }
+    }, 5000);
+}
+
+// Autocompletar campos según parámetros URL
+document.addEventListener('DOMContentLoaded', function() {
+    const urlParams = new URLSearchParams(window.location.search);
+    
+    // Preseleccionar cliente si viene en la URL
+    const clienteId = urlParams.get('cliente_id');
+    if (clienteId) {
+        document.getElementById('cliente_id').value = clienteId;
+    }
+    
+    // Preseleccionar médico si viene en la URL
+    const profesionalId = urlParams.get('profesional_id');
+    if (profesionalId) {
+        document.getElementById('profesional_id').value = profesionalId;
+    }
+    
+    // Preseleccionar servicio si viene en la URL
+    const servicioId = urlParams.get('servicio_id');
+    if (servicioId) {
+        document.getElementById('servicio_id').value = servicioId;
+        actualizarInfoServicio();
+    }
+    
+    // Si hay médico preseleccionado, cargar horarios
+    if (profesionalId) {
+        cargarHorariosDisponibles();
+    }
+});
 </script>
 {% endblock %}

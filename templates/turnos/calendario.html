@@ -37,11 +37,13 @@
                 <li><a class="dropdown-item" href="#" onclick="filtrarPorMedico(null)">
                     <i class="fas fa-users"></i> Todos los médicos
                 </a></li>
-                {% for profesional in profesionales %}
-                <li><a class="dropdown-item" href="#" onclick="filtrarPorMedico({{ profesional.id }})">
-                    <i class="fas fa-user-md"></i> {{ profesional.nombre_completo }}
-                </a></li>
-                {% endfor %}
+                {% if profesionales %}
+                    {% for profesional in profesionales %}
+                    <li><a class="dropdown-item" href="#" onclick="filtrarPorMedico({{ profesional.id }})">
+                        <i class="fas fa-user-md"></i> {{ profesional.nombre_completo }}
+                    </a></li>
+                    {% endfor %}
+                {% endif %}
                 <li><hr class="dropdown-divider"></li>
                 <li><h6 class="dropdown-header">Estados</h6></li>
                 <li><a class="dropdown-item" href="#" onclick="filtrarPorEstado('todos')">
@@ -74,11 +76,11 @@
                 </button>
             </div>
             <div>
-                <h4 class="mb-0" id="fechaActual">{{ fecha|date('%B %Y')|title }}</h4>
+                <h4 class="mb-0" id="fechaActual">{{ fecha|date('%B %Y')|title if fecha else 'Calendario' }}</h4>
             </div>
             <div>
                 <input type="date" class="form-control" id="fechaSelector" 
-                       value="{{ fecha }}" onchange="irAFecha(this.value)">
+                       value="{{ fecha or date_today() }}" onchange="irAFecha(this.value)">
             </div>
         </div>
     </div>
@@ -90,7 +92,7 @@
         <div class="card">
             <div class="card-body p-0">
                 <!-- Vista Semanal (por defecto) -->
-                <div id="vistaSemanl" class="calendar-view">
+                <div id="vistaSemanal" class="calendar-view">
                     <div class="table-responsive">
                         <table class="table table-bordered calendar-table mb-0">
                             <thead class="table-light">
@@ -107,6 +109,18 @@
                             </thead>
                             <tbody id="calendarioSemanal">
                                 <!-- Generado dinámicamente por JavaScript -->
+                                {% for hora in range(8, 19) %}
+                                <tr>
+                                    <td class="text-center fw-bold">{{ '%02d:00'|format(hora) }}</td>
+                                    <td class="calendar-cell" data-day="1" data-hour="{{ hora }}"></td>
+                                    <td class="calendar-cell" data-day="2" data-hour="{{ hora }}"></td>
+                                    <td class="calendar-cell" data-day="3" data-hour="{{ hora }}"></td>
+                                    <td class="calendar-cell" data-day="4" data-hour="{{ hora }}"></td>
+                                    <td class="calendar-cell" data-day="5" data-hour="{{ hora }}"></td>
+                                    <td class="calendar-cell" data-day="6" data-hour="{{ hora }}"></td>
+                                    <td class="calendar-cell" data-day="0" data-hour="{{ hora }}"></td>
+                                </tr>
+                                {% endfor %}
                             </tbody>
                         </table>
                     </div>
@@ -115,7 +129,7 @@
                 <!-- Vista Diaria -->
                 <div id="vistaDiaria" class="calendar-view" style="display: none;">
                     <div class="daily-header text-center mb-3 p-3 bg-light">
-                        <h5 class="mb-0" id="fechaDiaria">{{ fecha|date('%A, %d de %B de %Y')|title }}</h5>
+                        <h5 class="mb-0" id="fechaDiaria">{{ fecha|date('%A, %d de %B de %Y')|title if fecha else 'Seleccione una fecha' }}</h5>
                     </div>
                     <div class="table-responsive">
                         <table class="table table-bordered">
@@ -126,7 +140,16 @@
                                 </tr>
                             </thead>
                             <tbody id="calendarioDiario">
-                                <!-- Generado dinámicamente por JavaScript -->
+                                {% for hora in range(8, 19) %}
+                                <tr>
+                                    <td class="text-center fw-bold">{{ '%02d:00'|format(hora) }}</td>
+                                    <td class="calendar-cell-daily" data-hour="{{ hora }}">
+                                        <div class="time-slot" onclick="crearTurnoRapido('{{ hora }}:00')">
+                                            <small class="text-muted">Click para agregar turno</small>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
                             </tbody>
                         </table>
                     </div>
@@ -194,7 +217,7 @@
     <div class="col-md-3">
         <div class="card bg-primary text-white">
             <div class="card-body text-center">
-                <h4 class="mb-0" id="totalTurnos">0</h4>
+                <h4 class="mb-0" id="totalTurnos">{{ turnos|length if turnos else 0 }}</h4>
                 <small>Total Turnos Hoy</small>
             </div>
         </div>
@@ -202,7 +225,7 @@
     <div class="col-md-3">
         <div class="card bg-warning text-white">
             <div class="card-body text-center">
-                <h4 class="mb-0" id="turnosPendientes">0</h4>
+                <h4 class="mb-0" id="turnosPendientes">{{ turnos|selectattr('estado', 'equalto', 'pendiente')|list|length if turnos else 0 }}</h4>
                 <small>Pendientes</small>
             </div>
         </div>
@@ -210,6 +233,310 @@
     <div class="col-md-3">
         <div class="card bg-info text-white">
             <div class="card-body text-center">
-                <h4 class="mb-0" id="turnosConfirmados">0</h4>
+                <h4 class="mb-0" id="turnosConfirmados">{{ turnos|selectattr('estado', 'equalto', 'confirmado')|list|length if turnos else 0 }}</h4>
                 <small>Confirmados</small>
             </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-success text-white">
+            <div class="card-body text-center">
+                <h4 class="mb-0" id="turnosCompletados">{{ turnos|selectattr('estado', 'equalto', 'completado')|list|length if turnos else 0 }}</h4>
+                <small>Completados</small>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.calendar-table {
+    min-height: 500px;
+}
+
+.calendar-cell {
+    height: 60px;
+    vertical-align: top;
+    position: relative;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+.calendar-cell:hover {
+    background-color: #f8f9fa;
+}
+
+.calendar-cell-daily {
+    height: 80px;
+    vertical-align: top;
+    position: relative;
+}
+
+.time-slot {
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.time-slot:hover {
+    background-color: #e3f2fd;
+    border-radius: 4px;
+}
+
+.calendar-month td {
+    height: 120px;
+    vertical-align: top;
+    width: 14.28%;
+}
+
+.appointment-item {
+    background-color: #e3f2fd;
+    border-left: 3px solid #2196f3;
+    padding: 2px 6px;
+    margin: 1px 0;
+    font-size: 0.8em;
+    border-radius: 3px;
+    cursor: pointer;
+}
+
+.appointment-item:hover {
+    background-color: #bbdefb;
+}
+
+.status-pendiente { background-color: #ffc107; color: #000; }
+.status-confirmado { background-color: #17a2b8; }
+.status-completado { background-color: #28a745; }
+.status-cancelado { background-color: #dc3545; }
+
+.calendar-navigation {
+    background: #f8f9fa;
+    padding: 1rem;
+    border-radius: 8px;
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let vistaActual = 'week';
+let fechaActual = new Date();
+let profesionalFiltro = null;
+let estadoFiltro = 'todos';
+
+document.addEventListener('DOMContentLoaded', function() {
+    cargarCalendario();
+    actualizarFechaDisplay();
+});
+
+function cambiarVista(vista) {
+    vistaActual = vista;
+    
+    // Actualizar botones activos
+    document.querySelectorAll('.btn-group .btn').forEach(btn => {
+        btn.classList.remove('active');
+    });
+    
+    const btnMap = {
+        'day': 'btnDia',
+        'week': 'btnSemana', 
+        'month': 'btnMes'
+    };
+    
+    document.getElementById(btnMap[vista]).classList.add('active');
+    
+    // Mostrar/ocultar vistas
+    document.querySelectorAll('.calendar-view').forEach(view => {
+        view.style.display = 'none';
+    });
+    
+    const vistaMap = {
+        'day': 'vistaDiaria',
+        'week': 'vistaSemanal',
+        'month': 'vistaMensual'
+    };
+    
+    document.getElementById(vistaMap[vista]).style.display = 'block';
+    
+    cargarCalendario();
+}
+
+function navegarCalendario(direccion) {
+    const increment = vistaActual === 'month' ? 30 : vistaActual === 'week' ? 7 : 1;
+    
+    if (direccion === 'prev') {
+        fechaActual.setDate(fechaActual.getDate() - increment);
+    } else {
+        fechaActual.setDate(fechaActual.getDate() + increment);
+    }
+    
+    actualizarFechaDisplay();
+    cargarCalendario();
+}
+
+function irAHoy() {
+    fechaActual = new Date();
+    actualizarFechaDisplay();
+    cargarCalendario();
+}
+
+function irAFecha(fecha) {
+    fechaActual = new Date(fecha);
+    actualizarFechaDisplay();
+    cargarCalendario();
+}
+
+function actualizarFechaDisplay() {
+    const opciones = { year: 'numeric', month: 'long' };
+    document.getElementById('fechaActual').textContent = 
+        fechaActual.toLocaleDateString('es-ES', opciones);
+    
+    document.getElementById('fechaSelector').value = 
+        fechaActual.toISOString().split('T')[0];
+}
+
+function cargarCalendario() {
+    const fechaStr = fechaActual.toISOString().split('T')[0];
+    
+    // Simular carga de turnos (en producción vendría del servidor)
+    /*
+    const turnos = [
+        {
+            id: 1,
+            fecha: fechaStr,
+            hora: '09:00',
+            cliente: 'Juan Pérez',
+            medico: 'Dr. García',
+            estado: 'confirmado'
+        },
+        {
+            id: 2,
+            fecha: fechaStr,
+            hora: '10:30',
+            cliente: 'María López',
+            medico: 'Dra. Martínez',
+            estado: 'pendiente'
+        }
+    ];
+    */
+    
+    if (vistaActual === 'week') {
+        cargarVistaSemanal(turnos);
+    } else if (vistaActual === 'day') {
+        cargarVistaDiaria(turnos);
+    } else if (vistaActual === 'month') {
+        cargarVistaMensual(turnos);
+    }
+}
+
+function cargarVistaSemanal(turnos) {
+    // Limpiar celdas
+    document.querySelectorAll('.calendar-cell').forEach(cell => {
+        cell.innerHTML = '';
+    });
+    
+    // Agregar turnos a las celdas correspondientes
+    turnos.forEach(turno => {
+        const hora = parseInt(turno.hora.split(':')[0]);
+        const diaSemana = new Date(turno.fecha).getDay();
+        
+        const cell = document.querySelector(`[data-day="${diaSemana}"][data-hour="${hora}"]`);
+        if (cell) {
+            const appointmentDiv = document.createElement('div');
+            appointmentDiv.className = `appointment-item status-${turno.estado}`;
+            appointmentDiv.innerHTML = `
+                <div>${turno.hora}</div>
+                <div>${turno.cliente}</div>
+            `;
+            appointmentDiv.onclick = () => verDetallesTurno(turno.id);
+            cell.appendChild(appointmentDiv);
+        }
+    });
+}
+
+function cargarVistaDiaria(turnos) {
+    document.querySelectorAll('.calendar-cell-daily').forEach(cell => {
+        const timeSlot = cell.querySelector('.time-slot');
+        timeSlot.innerHTML = '<small class="text-muted">Click para agregar turno</small>';
+    });
+    
+    turnos.forEach(turno => {
+        const hora = parseInt(turno.hora.split(':')[0]);
+        const cell = document.querySelector(`[data-hour="${hora}"] .time-slot`);
+        
+        if (cell) {
+            cell.innerHTML = `
+                <div class="appointment-item status-${turno.estado} w-100">
+                    <strong>${turno.hora} - ${turno.cliente}</strong><br>
+                    <small>${turno.medico}</small>
+                </div>
+            `;
+            cell.onclick = () => verDetallesTurno(turno.id);
+        }
+    });
+}
+
+function cargarVistaMensual(turnos) {
+    // Implementación básica del calendario mensual
+    const tbody = document.getElementById('calendarioMensual');
+    tbody.innerHTML = '';
+    
+    const primerDia = new Date(fechaActual.getFullYear(), fechaActual.getMonth(), 1);
+    const ultimoDia = new Date(fechaActual.getFullYear(), fechaActual.getMonth() + 1, 0);
+    
+    let fecha = new Date(primerDia);
+    fecha.setDate(fecha.getDate() - fecha.getDay()); // Ir al domingo anterior
+    
+    while (fecha <= ultimoDia || fecha.getDay() !== 0) {
+        const fila = document.createElement('tr');
+        
+        for (let i = 0; i < 7; i++) {
+            const celda = document.createElement('td');
+            celda.className = 'calendar-cell';
+            
+            const esMesActual = fecha.getMonth() === fechaActual.getMonth();
+            celda.innerHTML = `
+                <div class="day-number ${esMesActual ? '' : 'text-muted'}">${fecha.getDate()}</div>
+                <div class="day-appointments"></div>
+            `;
+            
+            if (esMesActual) {
+                celda.onclick = () => irAFecha(fecha.toISOString().split('T')[0]);
+            }
+            
+            fila.appendChild(celda);
+            fecha.setDate(fecha.getDate() + 1);
+        }
+        
+        tbody.appendChild(fila);
+        
+        if (fecha.getMonth() !== fechaActual.getMonth() && fecha.getDay() === 0) {
+            break;
+        }
+    }
+}
+
+function filtrarPorMedico(medicoId) {
+    profesionalFiltro = medicoId;
+    cargarCalendario();
+}
+
+function filtrarPorEstado(estado) {
+    estadoFiltro = estado;
+    cargarCalendario();
+}
+
+function crearTurnoRapido(hora) {
+    const fecha = fechaActual.toISOString().split('T')[0];
+    const url = `/turnos/nuevo?fecha=${fecha}&hora=${hora}`;
+    window.location.href = url;
+}
+
+function verDetallesTurno(turnoId) {
+    window.location.href = `/turnos/${turnoId}`;
+}
+</script>
+{% endblock %}
