@@ -1,4 +1,5 @@
 from flask import Blueprint, render_template, request, jsonify, redirect, url_for, flash
+from flask_login import login_required
 from src.models import Servicio, Categoria
 from src.services.servicio_service import ServicioService
 from src.services.categoria_service import CategoriaService
@@ -7,6 +8,7 @@ from src.database import db
 servicios_bp = Blueprint('servicios', __name__)
 
 @servicios_bp.route('/')
+@login_required
 def listar():
     """Listar todos los servicios"""
     page = request.args.get('page', 1, type=int)
@@ -24,12 +26,14 @@ def listar():
                          categoria_id=categoria_id)
 
 @servicios_bp.route('/nuevo')
+@login_required
 def nuevo():
     """Formulario para crear nuevo servicio"""
     categorias = CategoriaService.get_all_categorias()
     return render_template('servicios/formulario.html', categorias=categorias)
 
 @servicios_bp.route('/crear', methods=['POST'])
+@login_required
 def crear():
     """Crear nuevo servicio"""
     try:
@@ -50,6 +54,7 @@ def crear():
         return redirect(url_for('servicios.nuevo'))
 
 @servicios_bp.route('/<int:id>')
+@login_required
 def detalle(id):
     """Ver detalle de un servicio"""
     servicio = ServicioService.get_servicio_by_id(id)
@@ -60,6 +65,7 @@ def detalle(id):
     return render_template('servicios/detalle.html', servicio=servicio)
 
 @servicios_bp.route('/<int:id>/editar')
+@login_required
 def editar(id):
     """Formulario para editar servicio"""
     servicio = ServicioService.get_servicio_by_id(id)
@@ -73,6 +79,7 @@ def editar(id):
                          categorias=categorias)
 
 @servicios_bp.route('/<int:id>/actualizar', methods=['POST', 'PUT'])
+@login_required
 def actualizar(id):
     """Actualizar servicio existente"""
     try:
@@ -99,6 +106,7 @@ def actualizar(id):
         return redirect(url_for('servicios.editar', id=id))
 
 @servicios_bp.route('/<int:id>/eliminar', methods=['POST', 'DELETE'])
+@login_required
 def eliminar(id):
     """Eliminar servicio"""
     try:
@@ -124,6 +132,7 @@ def eliminar(id):
         return redirect(url_for('servicios.listar'))
 
 @servicios_bp.route('/buscar')
+@login_required
 def buscar():
     """API para buscar servicios"""
     query = request.args.get('q', '')
@@ -135,6 +144,7 @@ def buscar():
     return jsonify([servicio.to_dict() for servicio in servicios])
 
 @servicios_bp.route('/api/todos')
+@login_required
 def api_todos():
     """API para obtener todos los servicios activos"""
     categoria_id = request.args.get('categoria_id', type=int)
@@ -142,6 +152,7 @@ def api_todos():
     return jsonify([servicio.to_dict() for servicio in servicios])
 
 @servicios_bp.route('/por-categoria/<int:categoria_id>')
+@login_required
 def por_categoria(categoria_id):
     """Listar servicios por categoría"""
     categoria = CategoriaService.get_categoria_by_id(categoria_id)

@@ -1,4 +1,5 @@
 from flask import Blueprint, render_template, request, jsonify, redirect, url_for, flash
+from flask_login import login_required
 from src.models import Categoria
 from src.services.categoria_service import CategoriaService
 from src.database import db
@@ -6,6 +7,7 @@ from src.database import db
 categorias_bp = Blueprint('categorias', __name__)
 
 @categorias_bp.route('/')
+@login_required
 def listar():
     """Listar todas las categorías"""
     page = request.args.get('page', 1, type=int)
@@ -19,11 +21,13 @@ def listar():
                          search=search)
 
 @categorias_bp.route('/nueva')
+@login_required
 def nueva():
     """Formulario para crear nueva categoría"""
     return render_template('categorias/formulario.html')
 
 @categorias_bp.route('/crear', methods=['POST'])
+@login_required
 def crear():
     """Crear nueva categoría"""
     try:
@@ -44,6 +48,7 @@ def crear():
         return redirect(url_for('categorias.nueva'))
 
 @categorias_bp.route('/<int:id>')
+@login_required
 def detalle(id):
     """Ver detalle de una categoría"""
     categoria = CategoriaService.get_categoria_by_id(id)
@@ -54,6 +59,7 @@ def detalle(id):
     return render_template('categorias/detalle.html', categoria=categoria)
 
 @categorias_bp.route('/<int:id>/editar')
+@login_required
 def editar(id):
     """Formulario para editar categoría"""
     categoria = CategoriaService.get_categoria_by_id(id)
@@ -64,6 +70,7 @@ def editar(id):
     return render_template('categorias/formulario.html', categoria=categoria)
 
 @categorias_bp.route('/<int:id>/actualizar', methods=['POST', 'PUT'])
+@login_required
 def actualizar(id):
     """Actualizar categoría existente"""
     try:
@@ -90,6 +97,7 @@ def actualizar(id):
         return redirect(url_for('categorias.editar', id=id))
 
 @categorias_bp.route('/<int:id>/eliminar', methods=['POST', 'DELETE'])
+@login_required
 def eliminar(id):
     """Eliminar categoría"""
     try:
@@ -115,6 +123,7 @@ def eliminar(id):
         return redirect(url_for('categorias.listar'))
 
 @categorias_bp.route('/api/todas')
+@login_required
 def api_todas():
     """API para obtener todas las categorías activas"""
     categorias = CategoriaService.get_all_categorias()

@@ -1,7 +1,9 @@
+# Actualización de index.py para incluir comandos de usuario y autenticación
+
 #!/usr/bin/env python3
 """
 Punto de entrada principal para la aplicación Flask
-Sistema de Gestión de Consultorio Médico
+Sistema de Gestión de Consultorio Médico con Autenticación
 """
 
 import os
@@ -13,6 +15,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from src.database import db
 from src.models import Cliente, Categoria, Profesional, Servicio, Turno
+from src.models.usuario import Usuario
 from src.app import create_app
 
 # Crear la aplicación Flask
@@ -30,7 +33,8 @@ def make_shell_context():
         'Categoria': Categoria,
         'Profesional': Profesional,
         'Servicio': Servicio,
-        'Turno': Turno
+        'Turno': Turno,
+        'Usuario': Usuario
     }
 
 @app.cli.command()
@@ -41,6 +45,166 @@ def init_db():
     """
     db.create_all()
     print("✅ Base de datos inicializada correctamente")
+
+@app.cli.command()
+def create_admin():
+    """
+    Comando CLI para crear usuario administrador
+    Uso: flask create-admin
+    """
+    try:
+        # Verificar si ya existe un admin
+        admin_existente = Usuario.query.filter_by(rol='admin').first()
+        if admin_existente:
+            print(f"⚠️ Ya existe un usuario administrador: {admin_existente.username}")
+            respuesta = input("¿Desea crear otro usuario admin? (y/N): ")
+            if respuesta.lower() != 'y':
+                return
+        
+        print("🔧 Creando usuario administrador...")
+        print("Por favor, complete la siguiente información:")
+        
+        # Solicitar datos
+        username = input("Nombre de usuario: ").strip()
+        while not username or Usuario.query.filter_by(username=username).first():
+            if not username:
+                print("❌ El nombre de usuario no puede estar vacío")
+            else:
+                print("❌ El nombre de usuario ya existe")
+            username = input("Nombre de usuario: ").strip()
+        
+        email = input("Email: ").strip()
+        while not email or Usuario.query.filter_by(email=email).first():
+            if not email:
+                print("❌ El email no puede estar vacío")
+            else:
+                print("❌ El email ya está registrado")
+            email = input("Email: ").strip()
+        
+        nombre = input("Nombre: ").strip()
+        while not nombre:
+            print("❌ El nombre no puede estar vacío")
+            nombre = input("Nombre: ").strip()
+        
+        apellido = input("Apellido: ").strip()
+        while not apellido:
+            print("❌ El apellido no puede estar vacío")
+            apellido = input("Apellido: ").strip()
+        
+        import getpass
+        password = getpass.getpass("Contraseña (mínimo 6 caracteres): ")
+        while len(password) < 6:
+            print("❌ La contraseña debe tener al menos 6 caracteres")
+            password = getpass.getpass("Contraseña (mínimo 6 caracteres): ")
+        
+        # Crear usuario administrador
+        admin = Usuario(
+            username=username,
+            email=email,
+            nombre=nombre,
+            apellido=apellido,
+            rol='admin'
+        )
+        admin.set_password(password)
+        
+        db.session.add(admin)
+        db.session.commit()
+        
+        print(f"✅ Usuario administrador creado exitosamente!")
+        print(f"   👤 Usuario: {username}")
+        print(f"   📧 Email: {email}")
+        print(f"   🏥 Nombre: {nombre} {apellido}")
+        print(f"   🔑 Rol: Administrador")
+        print(f"\n🚀 Ya puedes iniciar sesión en: http://localhost:5000")
+        
+    except Exception as e:
+        db.session.rollback()
+        print(f"❌ Error al crear usuario administrador: {str(e)}")
+
+@app.cli.command()
+def create_user():
+    """
+    Comando CLI para crear un usuario normal
+    Uso: flask create-user
+    """
+    try:
+        print("👤 Creando nuevo usuario...")
+        
+        username = input("Nombre de usuario: ").strip()
+        while not username or Usuario.query.filter_by(username=username).first():
+            if not username:
+                print("❌ El nombre de usuario no puede estar vacío")
+            else:
+                print("❌ El nombre de usuario ya existe")
+            username = input("Nombre de usuario: ").strip()
+        
+        email = input("Email: ").strip()
+        while not email or Usuario.query.filter_by(email=email).first():
+            if not email:
+                print("❌ El email no puede estar vacío")
+            else:
+                print("❌ El email ya está registrado")
+            email = input("Email: ").strip()
+        
+        nombre = input("Nombre: ").strip()
+        apellido = input("Apellido: ").strip()
+        
+        print("\nRoles disponibles:")
+        print("1. usuario - Usuario normal")
+        print("2. medico - Médico")
+        print("3. admin - Administrador")
+        
+        rol_opcion = input("Seleccione rol (1-3) [1]: ").strip() or "1"
+        roles = {"1": "usuario", "2": "medico", "3": "admin"}
+        rol = roles.get(rol_opcion, "usuario")
+        
+        import getpass
+        password = getpass.getpass("Contraseña: ")
+        while len(password) < 6:
+            print("❌ La contraseña debe tener al menos 6 caracteres")
+            password = getpass.getpass("Contraseña: ")
+        
+        # Crear usuario
+        usuario = Usuario(
+            username=username,
+            email=email,
+            nombre=nombre,
+            apellido=apellido,
+            rol=rol
+        )
+        usuario.set_password(password)
+        
+        db.session.add(usuario)
+        db.session.commit()
+        
+        print(f"✅ Usuario creado exitosamente!")
+        print(f"   👤 Usuario: {username}")
+        print(f"   🔑 Rol: {rol}")
+        
+    except Exception as e:
+        db.session.rollback()
+        print(f"❌ Error al crear usuario: {str(e)}")
+
+@app.cli.command()
+def list_users():
+    """
+    Comando CLI para listar usuarios
+    Uso: flask list-users
+    """
+    usuarios = Usuario.query.filter_by(activo=True).order_by(Usuario.fecha_creacion.desc()).all()
+    
+    if not usuarios:
+        print("📭 No hay usuarios registrados")
+        return
+    
+    print(f"👥 Usuarios registrados ({len(usuarios)}):")
+    print("-" * 80)
+    print(f"{'ID':<4} {'Usuario':<15} {'Nombre':<25} {'Rol':<10} {'Último Login':<20}")
+    print("-" * 80)
+    
+    for usuario in usuarios:
+        ultimo_login = usuario.ultimo_login.strftime('%d/%m/%Y %H:%M') if usuario.ultimo_login else 'Nunca'
+        print(f"{usuario.id:<4} {usuario.username:<15} {usuario.nombre_completo:<25} {usuario.rol:<10} {ultimo_login:<20}")
 
 @app.cli.command()
 def create_sample_data():
@@ -259,6 +423,7 @@ def reset_db():
         db.drop_all()
         db.create_all()
         print("✅ Base de datos reseteada correctamente")
+        print("💡 Recuerda crear un usuario administrador con: flask create-admin")
     else:
         print("❌ Operación cancelada")
 
@@ -289,9 +454,12 @@ if __name__ == '__main__':
     print("🚀 Iniciando aplicación...")
     print("📍 Servidor corriendo en: http://localhost:5000")
     print("🔧 Modo: Desarrollo")
-    print("📊 Dashboard disponible en: http://localhost:5000/")
+    print("🔐 Primera página: Login")
     print("\n💡 Comandos útiles:")
     print("   • flask init-db          - Inicializar base de datos")
+    print("   • flask create-admin     - Crear usuario administrador")
+    print("   • flask create-user      - Crear usuario normal")
+    print("   • flask list-users       - Listar usuarios")
     print("   • flask create-sample-data - Crear datos de ejemplo")
     print("   • flask reset-db         - Resetear base de datos")
     print("   • Ctrl+C                 - Detener servidor")
@@ -305,4 +473,3 @@ if __name__ == '__main__':
         use_reloader=True,  # Recarga automática al cambiar código
         threaded=True  # Manejo de múltiples requests
     )
-    

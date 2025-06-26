@@ -1,4 +1,5 @@
 from flask import Blueprint, render_template, request, jsonify, redirect, url_for, flash
+from flask_login import login_required
 
 # Crear el blueprint
 clientes_bp = Blueprint('clientes', __name__)
@@ -23,6 +24,7 @@ except ImportError:
     print("⚠️ No se pudo importar db")
 
 @clientes_bp.route('/')
+@login_required
 def listar():
     """Listar todos los clientes con paginación y búsqueda"""
     try:
@@ -45,11 +47,13 @@ def listar():
         return render_template('clientes/listar.html', clientes=None, search='')
 
 @clientes_bp.route('/nuevo')
+@login_required
 def nuevo():
     """Formulario para crear nuevo cliente"""
     return render_template('clientes/formulario.html')
 
 @clientes_bp.route('/crear', methods=['POST'])
+@login_required
 def crear():
     """Crear nuevo cliente"""
     try:
@@ -74,6 +78,7 @@ def crear():
         return redirect(url_for('clientes.nuevo'))
 
 @clientes_bp.route('/<int:id>')
+@login_required
 def detalle(id):
     """Ver detalle de un cliente"""
     try:
@@ -92,6 +97,7 @@ def detalle(id):
         return redirect(url_for('clientes.listar'))
 
 @clientes_bp.route('/<int:id>/editar')
+@login_required
 def editar(id):
     """Formulario para editar cliente"""
     try:
@@ -110,6 +116,7 @@ def editar(id):
         return redirect(url_for('clientes.listar'))
 
 @clientes_bp.route('/<int:id>/actualizar', methods=['POST', 'PUT'])
+@login_required
 def actualizar(id):
     """Actualizar cliente existente"""
     try:
@@ -140,6 +147,7 @@ def actualizar(id):
         return redirect(url_for('clientes.editar', id=id))
 
 @clientes_bp.route('/<int:id>/eliminar', methods=['POST', 'DELETE'])
+@login_required
 def eliminar(id):
     """Eliminar (desactivar) cliente"""
     try:
@@ -168,6 +176,7 @@ def eliminar(id):
         return redirect(url_for('clientes.listar'))
 
 @clientes_bp.route('/buscar')
+@login_required
 def buscar():
     """API para buscar clientes (AJAX)"""
     try:
@@ -183,6 +192,7 @@ def buscar():
         return jsonify({'error': str(e)}), 500
 
 @clientes_bp.route('/exportar')
+@login_required
 def exportar():
     """Exportar clientes a Excel/CSV"""
     try:

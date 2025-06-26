@@ -1,4 +1,5 @@
 from flask import Blueprint, render_template, request, jsonify, redirect, url_for, flash
+from flask_login import login_required
 from src.models import Profesional
 from src.services.profesional_service import ProfesionalService
 from src.database import db
@@ -6,6 +7,7 @@ from src.database import db
 profesionales_bp = Blueprint('profesionales', __name__)
 
 @profesionales_bp.route('/')
+@login_required
 def listar():
     """Listar todos los profesionales"""
     page = request.args.get('page', 1, type=int)
@@ -19,11 +21,13 @@ def listar():
                          search=search)
 
 @profesionales_bp.route('/nuevo')
+@login_required
 def nuevo():
     """Formulario para crear nuevo profesional"""
     return render_template('profesionales/formulario.html')
 
 @profesionales_bp.route('/crear', methods=['POST'])
+@login_required
 def crear():
     """Crear nuevo profesional"""
     try:
@@ -44,6 +48,7 @@ def crear():
         return redirect(url_for('profesionales.nuevo'))
 
 @profesionales_bp.route('/<int:id>')
+@login_required
 def detalle(id):
     """Ver detalle de un profesional"""
     profesional = ProfesionalService.get_profesional_by_id(id)
@@ -54,6 +59,7 @@ def detalle(id):
     return render_template('profesionales/detalle.html', profesional=profesional)
 
 @profesionales_bp.route('/<int:id>/editar')
+@login_required
 def editar(id):
     """Formulario para editar profesional"""
     profesional = ProfesionalService.get_profesional_by_id(id)
@@ -64,6 +70,7 @@ def editar(id):
     return render_template('profesionales/formulario.html', profesional=profesional)
 
 @profesionales_bp.route('/<int:id>/actualizar', methods=['POST', 'PUT'])
+@login_required
 def actualizar(id):
     """Actualizar profesional existente"""
     try:
@@ -90,6 +97,7 @@ def actualizar(id):
         return redirect(url_for('profesionales.editar', id=id))
 
 @profesionales_bp.route('/<int:id>/eliminar', methods=['POST', 'DELETE'])
+@login_required
 def eliminar(id):
     """Eliminar profesional"""
     try:
@@ -115,6 +123,7 @@ def eliminar(id):
         return redirect(url_for('profesionales.listar'))
 
 @profesionales_bp.route('/buscar')
+@login_required
 def buscar():
     """API para buscar profesionales"""
     query = request.args.get('q', '')
@@ -125,12 +134,14 @@ def buscar():
     return jsonify([profesional.to_dict() for profesional in profesionales])
 
 @profesionales_bp.route('/api/todos')
+@login_required
 def api_todos():
     """API para obtener todos los profesionales activos"""
     profesionales = ProfesionalService.get_all_profesionales()
     return jsonify([profesional.to_dict() for profesional in profesionales])
 
 @profesionales_bp.route('/<int:id>/horarios')
+@login_required
 def horarios(id):
     """Ver horarios disponibles de un profesional"""
     profesional = ProfesionalService.get_profesional_by_id(id)

@@ -1,4 +1,5 @@
 from flask import Blueprint, render_template, request, jsonify, redirect, url_for, flash
+from flask_login import login_required
 from src.models import Turno
 from src.services.turno_service import TurnoService
 from src.services.cliente_service import ClienteService
@@ -10,6 +11,7 @@ from src.database import db
 turnos_bp = Blueprint('turnos', __name__)
 
 @turnos_bp.route('/')
+@login_required
 def listar():
     """Listar todos los turnos"""
     page = request.args.get('page', 1, type=int)
@@ -43,6 +45,7 @@ def listar():
                          })
 
 @turnos_bp.route('/calendario')
+@login_required
 def calendario():
     """Vista de calendario de turnos"""
     fecha = request.args.get('fecha', date.today().isoformat())
@@ -58,6 +61,7 @@ def calendario():
                          profesional_id=profesional_id)
 
 @turnos_bp.route('/nuevo')
+@login_required
 def nuevo():
     """Formulario para crear nuevo turno"""
     clientes = ClienteService.get_all_clientes()
@@ -70,6 +74,7 @@ def nuevo():
                          servicios=servicios)
 
 @turnos_bp.route('/crear', methods=['POST'])
+@login_required
 def crear():
     """Crear nuevo turno"""
     try:
@@ -90,6 +95,7 @@ def crear():
         return redirect(url_for('turnos.nuevo'))
 
 @turnos_bp.route('/<int:id>')
+@login_required
 def detalle(id):
     """Ver detalle de un turno"""
     turno = TurnoService.get_turno_by_id(id)
@@ -100,6 +106,7 @@ def detalle(id):
     return render_template('turnos/detalle.html', turno=turno)
 
 @turnos_bp.route('/<int:id>/editar')
+@login_required
 def editar(id):
     """Formulario para editar turno"""
     turno = TurnoService.get_turno_by_id(id)
@@ -118,6 +125,7 @@ def editar(id):
                          servicios=servicios)
 
 @turnos_bp.route('/<int:id>/actualizar', methods=['POST', 'PUT'])
+@login_required
 def actualizar(id):
     """Actualizar turno existente"""
     try:
@@ -144,6 +152,7 @@ def actualizar(id):
         return redirect(url_for('turnos.editar', id=id))
 
 @turnos_bp.route('/<int:id>/cambiar-estado', methods=['POST'])
+@login_required
 def cambiar_estado(id):
     """Cambiar estado de un turno"""
     try:
@@ -172,6 +181,7 @@ def cambiar_estado(id):
         return redirect(url_for('turnos.detalle', id=id))
 
 @turnos_bp.route('/<int:id>/cancelar', methods=['POST'])
+@login_required
 def cancelar(id):
     """Cancelar un turno"""
     try:
@@ -198,6 +208,7 @@ def cancelar(id):
         return redirect(url_for('turnos.detalle', id=id))
 
 @turnos_bp.route('/horarios-disponibles')
+@login_required
 def horarios_disponibles():
     """API para obtener horarios disponibles"""
     fecha = request.args.get('fecha')
@@ -212,6 +223,7 @@ def horarios_disponibles():
     return jsonify({'horarios': horarios})
 
 @turnos_bp.route('/resumen-dia')
+@login_required
 def resumen_dia():
     """API para obtener resumen del día"""
     fecha = request.args.get('fecha', date.today().isoformat())
@@ -222,6 +234,7 @@ def resumen_dia():
     return jsonify(resumen)
 
 @turnos_bp.route('/proximos')
+@login_required
 def proximos():
     """API para obtener próximos turnos"""
     limite = request.args.get('limite', 5, type=int)
@@ -232,6 +245,7 @@ def proximos():
     return jsonify([turno.to_dict() for turno in turnos])
 
 @turnos_bp.route('/reporte')
+@login_required
 def reporte():
     """Generar reporte de turnos"""
     fecha_desde = request.args.get('fecha_desde')

@@ -1,3 +1,4 @@
+"""
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -11,14 +12,10 @@
     <!-- Font Awesome -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     
-    <!-- Custom CSS -->
     <style>
         :root {
             --primary-color: #2c3e50;
             --secondary-color: #3498db;
-            --success-color: #27ae60;
-            --warning-color: #f39c12;
-            --danger-color: #e74c3c;
             --sidebar-width: 250px;
         }
 
@@ -35,7 +32,6 @@
             width: var(--sidebar-width);
             background: linear-gradient(180deg, var(--primary-color) 0%, #34495e 100%);
             z-index: 1000;
-            transition: all 0.3s;
             overflow-y: auto;
         }
 
@@ -54,15 +50,12 @@
         .sidebar .nav-link {
             color: rgba(255,255,255,0.8);
             padding: 0.75rem 1.5rem;
-            border: none;
-            border-radius: 0;
             transition: all 0.3s;
         }
 
         .sidebar .nav-link:hover {
             color: white;
             background-color: rgba(255,255,255,0.1);
-            transform: translateX(5px);
         }
 
         .sidebar .nav-link.active {
@@ -70,15 +63,9 @@
             background-color: var(--secondary-color);
         }
 
-        .sidebar .nav-link i {
-            width: 20px;
-            margin-right: 10px;
-        }
-
         .main-content {
             margin-left: var(--sidebar-width);
             min-height: 100vh;
-            transition: all 0.3s;
         }
 
         .top-navbar {
@@ -92,81 +79,26 @@
             padding: 2rem;
         }
 
-        .card {
-            border: none;
-            border-radius: 10px;
-            box-shadow: 0 0 20px rgba(0,0,0,0.1);
-            transition: transform 0.3s;
+        .user-info {
+            display: flex;
+            align-items: center;
+            color: rgba(255,255,255,0.9);
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
         }
 
-        .card:hover {
-            transform: translateY(-5px);
-        }
-
-        .btn-primary {
-            background-color: var(--secondary-color);
-            border-color: var(--secondary-color);
-        }
-
-        .btn-primary:hover {
-            background-color: #2980b9;
-            border-color: #2980b9;
-        }
-
-        .alert {
-            border-radius: 10px;
-            border: none;
-        }
-
-        .table {
-            background: white;
-            border-radius: 10px;
-            overflow: hidden;
-            box-shadow: 0 0 20px rgba(0,0,0,0.1);
-        }
-
-        .badge {
-            font-size: 0.75em;
-            padding: 0.5em 0.75em;
-        }
-
-        .status-pendiente { background-color: var(--warning-color); }
-        .status-confirmado { background-color: var(--secondary-color); }
-        .status-completado { background-color: var(--success-color); }
-        .status-cancelado { background-color: var(--danger-color); }
-
-        /* Responsive */
-        @media (max-width: 768px) {
-            .sidebar {
-                transform: translateX(-100%);
-            }
-            
-            .sidebar.show {
-                transform: translateX(0);
-            }
-            
-            .main-content {
-                margin-left: 0;
-            }
-        }
-
-        /* Loading animation */
-        .loading {
-            display: inline-block;
-            width: 20px;
-            height: 20px;
-            border: 3px solid rgba(255,255,255,.3);
+        .user-avatar {
+            width: 40px;
+            height: 40px;
             border-radius: 50%;
-            border-top-color: #fff;
-            animation: spin 1s ease-in-out infinite;
-        }
-
-        @keyframes spin {
-            to { transform: rotate(360deg); }
+            background: var(--secondary-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 10px;
+            font-weight: bold;
         }
     </style>
-    
-    {% block extra_css %}{% endblock %}
 </head>
 <body>
     <!-- Sidebar -->
@@ -175,64 +107,59 @@
             <h4><i class="fas fa-stethoscope"></i> Centro Médico</h4>
         </div>
         
+        <!-- Información del usuario - CON VERIFICACIÓN -->
+        {% if current_user and current_user.is_authenticated %}
+        <div class="user-info">
+            <div class="user-avatar">
+                {{ current_user.nombre[0] if current_user.nombre else 'U' }}{{ current_user.apellido[0] if current_user.apellido else 'S' }}
+            </div>
+            <div>
+                <div class="fw-bold">{{ current_user.nombre_completo if current_user.nombre_completo else 'Usuario' }}</div>
+                <div style="font-size: 0.8em; opacity: 0.8;">
+                    {% if current_user.is_admin and current_user.is_admin() %}
+                        <i class="fas fa-crown"></i> Admin
+                    {% elif current_user.is_medico and current_user.is_medico() %}
+                        <i class="fas fa-user-md"></i> Médico
+                    {% else %}
+                        <i class="fas fa-user"></i> Usuario
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endif %}
+        
         <ul class="nav flex-column">
             <li class="nav-item">
-                <a class="nav-link {% if request.endpoint == 'main.index' %}active{% endif %}" href="{{ url_for('main.index') }}">
-                    <i class="fas fa-tachometer-alt"></i>
-                    Dashboard
+                <a class="nav-link" href="{{ url_for('main.index') }}">
+                    <i class="fas fa-tachometer-alt"></i> Dashboard
+                </a>
+            </li>
+            
+            {% if current_user and current_user.is_authenticated %}
+            <li class="nav-item">
+                <a class="nav-link" href="{{ url_for('clientes.listar') if url_for else '#' }}">
+                    <i class="fas fa-users"></i> Pacientes
                 </a>
             </li>
             
             <li class="nav-item">
-                <a class="nav-link {% if 'clientes' in request.endpoint %}active{% endif %}" href="{{ url_for('clientes.listar') }}">
-                    <i class="fas fa-users"></i>
-                    Pacientes
+                <a class="nav-link" href="{{ url_for('profesionales.listar') if url_for else '#' }}">
+                    <i class="fas fa-user-md"></i> Médicos
                 </a>
             </li>
             
             <li class="nav-item">
-                <a class="nav-link {% if 'profesionales' in request.endpoint %}active{% endif %}" href="{{ url_for('profesionales.listar') }}">
-                    <i class="fas fa-user-md"></i>
-                    Médicos
+                <a class="nav-link" href="{{ url_for('servicios.listar') if url_for else '#' }}">
+                    <i class="fas fa-briefcase-medical"></i> Servicios
                 </a>
             </li>
             
             <li class="nav-item">
-                <a class="nav-link {% if 'servicios' in request.endpoint %}active{% endif %}" href="{{ url_for('servicios.listar') }}">
-                    <i class="fas fa-briefcase-medical"></i>
-                    Servicios
+                <a class="nav-link" href="{{ url_for('turnos.listar') if url_for else '#' }}">
+                    <i class="fas fa-calendar-alt"></i> Turnos
                 </a>
             </li>
-            
-            <li class="nav-item">
-                <a class="nav-link {% if 'turnos' in request.endpoint %}active{% endif %}" href="{{ url_for('turnos.listar') }}">
-                    <i class="fas fa-calendar-alt"></i>
-                    Turnos
-                </a>
-            </li>
-            
-            <li class="nav-item">
-                <a class="nav-link {% if 'categorias' in request.endpoint %}active{% endif %}" href="{{ url_for('categorias.listar') }}">
-                    <i class="fas fa-tags"></i>
-                    Categorías
-                </a>
-            </li>
-            
-            <hr style="border-color: rgba(255,255,255,0.2); margin: 1rem 0;">
-            
-            <li class="nav-item">
-                <a class="nav-link" href="#" onclick="exportarDatos()">
-                    <i class="fas fa-download"></i>
-                    Exportar Datos
-                </a>
-            </li>
-            
-            <li class="nav-item">
-                <a class="nav-link" href="#" onclick="mostrarAyuda()">
-                    <i class="fas fa-question-circle"></i>
-                    Ayuda
-                </a>
-            </li>
+            {% endif %}
         </ul>
     </nav>
 
@@ -240,32 +167,30 @@
     <div class="main-content">
         <!-- Top Navigation -->
         <div class="top-navbar d-flex justify-content-between align-items-center">
-            <div class="d-flex align-items-center">
-                <button class="btn btn-link d-md-none" onclick="toggleSidebar()">
-                    <i class="fas fa-bars"></i>
-                </button>
-                <h5 class="mb-0 ms-3">{% block page_title %}Sistema de Gestión{% endblock %}</h5>
+            <div>
+                <h5 class="mb-0">{% block page_title %}Sistema de Gestión{% endblock %}</h5>
             </div>
             
-            <div class="d-flex align-items-center">
-                <span class="me-3">
-                    <i class="fas fa-calendar"></i>
-                    <span id="current-date"></span>
-                </span>
-                <span class="me-3">
-                    <i class="fas fa-clock"></i>
-                    <span id="current-time"></span>
-                </span>
-                <div class="dropdown">
-                    <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
-                        <i class="fas fa-user"></i> Admin
-                    </button>
-                    <ul class="dropdown-menu">
-                        <li><a class="dropdown-item" href="#"><i class="fas fa-cog"></i> Configuración</a></li>
-                        <li><hr class="dropdown-divider"></li>
-                        <li><a class="dropdown-item" href="#"><i class="fas fa-sign-out-alt"></i> Cerrar Sesión</a></li>
-                    </ul>
-                </div>
+            <div class="dropdown">
+                <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                    <i class="fas fa-user"></i> 
+                    {% if current_user and current_user.is_authenticated %}
+                        {{ current_user.nombre if current_user.nombre else 'Usuario' }}
+                    {% else %}
+                        Invitado
+                    {% endif %}
+                </button>
+                <ul class="dropdown-menu">
+                    {% if current_user and current_user.is_authenticated %}
+                        <li><a class="dropdown-item" href="{{ url_for('auth.logout') }}">
+                            <i class="fas fa-sign-out-alt"></i> Cerrar Sesión
+                        </a></li>
+                    {% else %}
+                        <li><a class="dropdown-item" href="{{ url_for('auth.login') }}">
+                            <i class="fas fa-sign-in-alt"></i> Iniciar Sesión
+                        </a></li>
+                    {% endif %}
+                </ul>
             </div>
         </div>
 
@@ -276,7 +201,6 @@
                 {% if messages %}
                     {% for category, message in messages %}
                         <div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show" role="alert">
-                            <i class="fas fa-{{ 'exclamation-triangle' if category == 'error' else 'check-circle' if category == 'success' else 'info-circle' }}"></i>
                             {{ message }}
                             <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                         </div>
@@ -292,80 +216,7 @@
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     
-    <!-- jQuery -->
-    <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
-    
-    <!-- Custom JS -->
-    <script>
-        // Toggle sidebar en móviles
-        function toggleSidebar() {
-            document.getElementById('sidebar').classList.toggle('show');
-        }
-
-        // Actualizar fecha y hora
-        function updateDateTime() {
-            const now = new Date();
-            const date = now.toLocaleDateString('es-AR');
-            const time = now.toLocaleTimeString('es-AR');
-            
-            document.getElementById('current-date').textContent = date;
-            document.getElementById('current-time').textContent = time;
-        }
-
-        // Funciones de utilidad
-        function exportarDatos() {
-            alert('Función de exportación en desarrollo');
-        }
-
-        function mostrarAyuda() {
-            alert('Sistema de Gestión de Consultorio Médico v1.0\n\nPara soporte contacte al administrador.');
-        }
-
-        // Confirmar eliminaciones
-        function confirmarEliminacion(mensaje = '¿Está seguro de que desea eliminar este elemento?') {
-            return confirm(mensaje);
-        }
-
-        // Loading button
-        function showLoading(button) {
-            const originalText = button.innerHTML;
-            button.innerHTML = '<span class="loading"></span> Procesando...';
-            button.disabled = true;
-            
-            setTimeout(() => {
-                button.innerHTML = originalText;
-                button.disabled = false;
-            }, 2000);
-        }
-
-        // Inicializar
-        document.addEventListener('DOMContentLoaded', function() {
-            updateDateTime();
-            setInterval(updateDateTime, 1000);
-            
-            // Auto-hide alerts después de 5 segundos
-            setTimeout(() => {
-                const alerts = document.querySelectorAll('.alert:not(.alert-permanent)');
-                alerts.forEach(alert => {
-                    if (alert.classList.contains('show')) {
-                        alert.classList.remove('show');
-                    }
-                });
-            }, 5000);
-        });
-
-        // Cerrar sidebar al hacer clic fuera en móviles
-        document.addEventListener('click', function(e) {
-            const sidebar = document.getElementById('sidebar');
-            const isClickInsideSidebar = sidebar.contains(e.target);
-            const isToggleButton = e.target.closest('[onclick="toggleSidebar()"]');
-            
-            if (!isClickInsideSidebar && !isToggleButton && window.innerWidth <= 768) {
-                sidebar.classList.remove('show');
-            }
-        });
-    </script>
-    
     {% block extra_js %}{% endblock %}
 </body>
 </html>
+"""
