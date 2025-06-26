@@ -234,3 +234,12 @@ def print_blueprint_status():
 # Ejecutar al importar este módulo (solo en modo debug)
 if __name__ == '__main__':
     print_blueprint_status()
+
+from flask import Blueprint
+
+clientes_bp = Blueprint('clientes', __name__)
+
+# Puedes agregar tus rutas aquí
+@clientes_bp.route('/')
+def index():
+    return

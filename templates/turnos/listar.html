@@ -79,7 +79,7 @@
                             <th>Servicio</th>
                             <th>Estado</th>
                             <th>Precio</th>
-                            <th>Acciones</th>
+                            <th width="180">Acciones</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -93,7 +93,7 @@
                             </td>
                             <td>
                                 <div class="patient-cell">
-                                    <i class="fas fa-user"></i>
+                                    <i class="fas fa-user text-primary"></i>
                                     <a href="{{ url_for('clientes.detalle', id=turno.cliente.id) }}" 
                                        class="text-decoration-none">
                                         {{ turno.cliente.nombre_completo }}
@@ -102,7 +102,7 @@
                             </td>
                             <td>
                                 <div class="doctor-cell">
-                                    <i class="fas fa-user-md"></i>
+                                    <i class="fas fa-user-md text-success"></i>
                                     {{ turno.profesional.nombre_completo }}
                                 </div>
                             </td>
@@ -119,36 +119,51 @@
                                 <strong>${{ "%.2f"|format(turno.precio_final or turno.servicio.precio or 0) }}</strong>
                             </td>
                             <td>
-                                <div class="btn-group btn-group-sm">
+                                <!-- BOTONES DE ACCIÓN CORREGIDOS -->
+                                <div class="d-flex gap-1">
+                                    <!-- Ver detalle -->
                                     <a href="{{ url_for('turnos.detalle', id=turno.id) }}" 
-                                       class="btn btn-outline-info" title="Ver detalle">
+                                       class="btn btn-sm btn-outline-info" title="Ver detalle">
                                         <i class="fas fa-eye"></i>
                                     </a>
+                                    
+                                    <!-- Editar (solo si está pendiente o confirmado) -->
                                     {% if turno.estado in ['pendiente', 'confirmado'] %}
                                         <a href="{{ url_for('turnos.editar', id=turno.id) }}" 
-                                           class="btn btn-outline-warning" title="Editar">
+                                           class="btn btn-sm btn-outline-warning" title="Editar">
                                             <i class="fas fa-edit"></i>
                                         </a>
                                     {% endif %}
-                                    <div class="btn-group btn-group-sm">
-                                        <button type="button" class="btn btn-outline-secondary dropdown-toggle" 
-                                                data-bs-toggle="dropdown" title="Cambiar estado">
-                                            <i class="fas fa-exchange-alt"></i>
+                                    
+                                    <!-- Menú de cambiar estado -->
+                                    <div class="dropdown">
+                                        <button class="btn btn-sm btn-outline-secondary dropdown-toggle" 
+                                                type="button" data-bs-toggle="dropdown" title="Cambiar estado">
+                                            <i class="fas fa-cog"></i>
                                         </button>
                                         <ul class="dropdown-menu">
+                                            <li><h6 class="dropdown-header">Cambiar Estado</h6></li>
+                                            
                                             {% if turno.estado == 'pendiente' %}
-                                                <li><a class="dropdown-item" onclick="cambiarEstado({{ turno.id }}, 'confirmado')">
-                                                    <i class="fas fa-check"></i> Confirmar
+                                                <li><a class="dropdown-item" href="#" onclick="cambiarEstado({{ turno.id }}, 'confirmado')">
+                                                    <i class="fas fa-check text-success"></i> Confirmar
                                                 </a></li>
                                             {% endif %}
+                                            
                                             {% if turno.estado in ['pendiente', 'confirmado'] %}
-                                                <li><a class="dropdown-item" onclick="cambiarEstado({{ turno.id }}, 'completado')">
-                                                    <i class="fas fa-check-double"></i> Completar
+                                                <li><a class="dropdown-item" href="#" onclick="cambiarEstado({{ turno.id }}, 'completado')">
+                                                    <i class="fas fa-check-double text-info"></i> Completar
                                                 </a></li>
                                                 <li><hr class="dropdown-divider"></li>
-                                                <li><a class="dropdown-item text-danger" onclick="cancelarTurno({{ turno.id }})">
+                                                <li><a class="dropdown-item text-danger" href="#" onclick="cancelarTurno({{ turno.id }})">
                                                     <i class="fas fa-times"></i> Cancelar
                                                 </a></li>
+                                            {% endif %}
+                                            
+                                            {% if turno.estado in ['completado', 'cancelado'] %}
+                                                <li><span class="dropdown-item-text text-muted">
+                                                    <i class="fas fa-info-circle"></i> No hay acciones disponibles
+                                                </span></li>
                                             {% endif %}
                                         </ul>
                                     </div>
@@ -270,10 +285,61 @@
     font-size: 0.85em;
 }
 
-.status-pendiente { background-color: #ffc107; color: #000; }
-.status-confirmado { background-color: #17a2b8; }
-.status-completado { background-color: #28a745; }
-.status-cancelado { background-color: #dc3545; }
+.status-pendiente { 
+    background-color: #ffc107; 
+    color: #000; 
+}
+.status-confirmado { 
+    background-color: #17a2b8; 
+    color: white;
+}
+.status-completado { 
+    background-color: #28a745; 
+    color: white;
+}
+.status-cancelado { 
+    background-color: #dc3545; 
+    color: white;
+}
+
+/* Mejorar la visualización de los botones de acción */
+.dropdown-toggle::after {
+    margin-left: 0.5em;
+}
+
+.btn-sm {
+    font-size: 0.75rem;
+    padding: 0.25rem 0.5rem;
+}
+
+/* Asegurar que los dropdowns se vean bien */
+.dropdown-menu {
+    min-width: 160px;
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+}
+
+.dropdown-item {
+    padding: 0.5rem 1rem;
+}
+
+.dropdown-item:hover {
+    background-color: #f8f9fa;
+}
+
+.dropdown-header {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #6c757d;
+}
+
+/* Espaciado entre botones */
+.d-flex.gap-1 > * {
+    margin-right: 0.25rem;
+}
+
+.d-flex.gap-1 > *:last-child {
+    margin-right: 0;
+}
 </style>
 {% endblock %}
 
@@ -282,7 +348,20 @@
 let turnoIdCancelar = null;
 
 function cambiarEstado(turnoId, nuevoEstado) {
-    if (confirm(`¿Cambiar estado del turno a "${nuevoEstado}"?`)) {
+    const estadosTexto = {
+        'pendiente': 'Pendiente',
+        'confirmado': 'Confirmado', 
+        'completado': 'Completado',
+        'cancelado': 'Cancelado'
+    };
+    
+    if (confirm(`¿Cambiar estado del turno a "${estadosTexto[nuevoEstado]}"?`)) {
+        // Mostrar indicador de carga
+        const btn = event.target.closest('button') || event.target.closest('a');
+        const originalText = btn.innerHTML;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
+        btn.disabled = true;
+        
         fetch(`/turnos/${turnoId}/cambiar-estado`, {
             method: 'POST',
             headers: {
@@ -294,14 +373,23 @@ function cambiarEstado(turnoId, nuevoEstado) {
         .then(response => response.json())
         .then(data => {
             if (data.success) {
-                location.reload();
+                // Mostrar mensaje de éxito
+                showAlert(`Turno marcado como ${estadosTexto[nuevoEstado]}`, 'success');
+                // Recargar página después de un momento
+                setTimeout(() => {
+                    location.reload();
+                }, 1000);
             } else {
-                alert('Error: ' + data.error);
+                showAlert('Error: ' + data.error, 'danger');
+                btn.innerHTML = originalText;
+                btn.disabled = false;
             }
         })
         .catch(error => {
             console.error('Error:', error);
-            alert('Error al cambiar estado del turno');
+            showAlert('Error de conexión al cambiar estado del turno', 'danger');
+            btn.innerHTML = originalText;
+            btn.disabled = false;
         });
     }
 }
@@ -316,7 +404,7 @@ document.getElementById('confirmarCancelacion').addEventListener('click', functi
     if (turnoIdCancelar) {
         const motivo = document.getElementById('motivoCancelacion').value;
         
-        this.innerHTML = '<span class="loading"></span> Cancelando...';
+        this.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Cancelando...';
         this.disabled = true;
         
         fetch(`/turnos/${turnoIdCancelar}/cancelar`, {
@@ -331,27 +419,49 @@ document.getElementById('confirmarCancelacion').addEventListener('click', functi
         .then(data => {
             if (data.success) {
                 bootstrap.Modal.getInstance(document.getElementById('modalCancelar')).hide();
-                location.reload();
+                showAlert('Turno cancelado exitosamente', 'success');
+                setTimeout(() => {
+                    location.reload();
+                }, 1000);
             } else {
-                alert('Error: ' + data.error);
+                showAlert('Error: ' + data.error, 'danger');
                 this.innerHTML = '<i class="fas fa-times"></i> Cancelar Turno';
                 this.disabled = false;
             }
         })
         .catch(error => {
             console.error('Error:', error);
-            alert('Error al cancelar turno');
+            showAlert('Error al cancelar turno', 'danger');
             this.innerHTML = '<i class="fas fa-times"></i> Cancelar Turno';
             this.disabled = false;
         });
     }
 });
 
+function showAlert(message, type) {
+    // Crear alerta temporal
+    const alertDiv = document.createElement('div');
+    alertDiv.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
+    alertDiv.style.cssText = 'top: 20px; right: 20px; z-index: 9999; max-width: 400px;';
+    alertDiv.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    
+    document.body.appendChild(alertDiv);
+    
+    // Auto-remove después de 4 segundos
+    setTimeout(() => {
+        if (alertDiv.parentNode) {
+            alertDiv.parentNode.removeChild(alertDiv);
+        }
+    }, 4000);
+}
+
 // Establecer fecha de hoy por defecto
 document.addEventListener('DOMContentLoaded', function() {
     const hoy = new Date().toISOString().split('T')[0];
     const fechaDesde = document.getElementById('fecha_desde');
-    const fechaHasta = document.getElementById('fecha_hasta');
     
     if (!fechaDesde.value) {
         fechaDesde.value = hoy;

@@ -1,6 +1,3 @@
-# Actualización de index.py para incluir comandos de usuario y autenticación
-
-#!/usr/bin/env python3
 """
 Punto de entrada principal para la aplicación Flask
 Sistema de Gestión de Consultorio Médico con Autenticación
@@ -8,7 +5,11 @@ Sistema de Gestión de Consultorio Médico con Autenticación
 
 import os
 import sys
-from flask import render_template
+from flask import render_template, Flask
+import click
+from flask import Flask
+from src.database import db
+from src.models import Usuario
 
 # Agregar el directorio actual al path de Python
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))

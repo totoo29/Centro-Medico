@@ -84,6 +84,11 @@ def actualizar(id):
     """Actualizar servicio existente"""
     try:
         data = request.get_json() if request.is_json else request.form
+        
+        # Debug: imprimir los datos recibidos
+        print(f"Actualizando servicio ID: {id}")
+        print(f"Datos recibidos: {dict(data)}")
+        
         servicio = ServicioService.actualizar_servicio(id, data)
         
         if not servicio:
@@ -96,9 +101,11 @@ def actualizar(id):
             return jsonify({'success': True, 'servicio': servicio.to_dict()})
         
         flash('Servicio actualizado exitosamente', 'success')
-        return redirect(url_for('servicios.detalle', id=id))
+        # CAMBIO: Redirigir a la lista en lugar del detalle
+        return redirect(url_for('servicios.listar'))
         
     except Exception as e:
+        print(f"Error actualizando servicio: {str(e)}")  # Debug
         if request.is_json:
             return jsonify({'success': False, 'error': str(e)}), 400
         
@@ -170,3 +177,23 @@ def por_categoria(categoria_id):
                          servicios=servicios,
                          categoria=categoria,
                          search=search)
+
+@servicios_bp.route('/servicios/crear', methods=['GET', 'POST'])
+def crear_servicio():
+    if request.method == 'POST':
+        data = request.form.to_dict()
+        try:
+            ServicioService.crear_servicio(data)
+            # Si es AJAX, responde con JSON
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return jsonify(success=True)
+            # Si es envío normal, redirige
+            return redirect(url_for('servicios.listar'))
+        except Exception as e:
+            # Si es AJAX, responde con error JSON
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return jsonify(success=False, error=str(e)), 400
+            # Si es envío normal, renderiza el formulario con error
+            return render_template('servicios/formulario.html', error=str(e), data=data)
+    # GET: muestra el formulario vacío
+    return render_template('servicios/formulario.html')

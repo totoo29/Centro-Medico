@@ -92,13 +92,13 @@ class ServicioService:
                 raise ValueError('La categoría seleccionada no existe')
         
         # Crear servicio
-        servicio = Servicio(
-            nombre=data['nombre'].strip(),
-            descripcion=data.get('descripcion', '').strip() or None,
-            precio=float(data['precio']),
-            duracion=int(data['duracion']),
-            categoria_id=categoria_id if categoria_id else None
-        )
+        servicio = Servicio()
+        servicio.nombre = data['nombre'].strip()
+        servicio.descripcion = data.get('descripcion', '').strip() or None
+        servicio.precio = float(data['precio'])
+        servicio.duracion = int(data['duracion'])
+        servicio.categoria_id = categoria_id if categoria_id else None
+        
         
         db.session.add(servicio)
         db.session.commit()

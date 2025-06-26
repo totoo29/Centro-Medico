@@ -1,0 +1,343 @@
+{% extends "base.html" %}
+
+{% block title %}{{ servicio.nombre }} - Consultorio Médico{% endblock %}
+{% block page_title %}Detalle del Servicio{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-4">
+        <!-- Información principal del servicio -->
+        <div class="card">
+            <div class="card-header text-center">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-medical-bag"></i> Información del Servicio
+                </h5>
+            </div>
+            <div class="card-body text-center">
+                <div class="service-icon mb-3">
+                    <i class="fas fa-medical-bag fa-4x text-primary"></i>
+                </div>
+                
+                <h4 class="text-primary">{{ servicio.nombre }}</h4>
+                
+                {% if servicio.categoria %}
+                    <div class="category-info mb-3">
+                        <span class="badge category-badge" style="background-color: {{ servicio.categoria.color }}; color: white;">
+                            <i class="fas fa-tag"></i> {{ servicio.categoria.nombre }}
+                        </span>
+                    </div>
+                {% endif %}
+
+                <div class="service-details mb-3">
+                    <div class="detail-item">
+                        <i class="fas fa-clock text-info"></i>
+                        <strong>{{ servicio.duracion }} minutos</strong>
+                    </div>
+                    <div class="detail-item">
+                        <i class="fas fa-dollar-sign text-success"></i>
+                        <strong>${{ "%.2f"|format(servicio.precio) }}</strong>
+                    </div>
+                </div>
+
+                <div class="d-grid gap-2">
+                    <a href="{{ url_for('servicios.editar', id=servicio.id) }}" class="btn btn-warning">
+                        <i class="fas fa-edit"></i> Editar Servicio
+                    </a>
+                    <a href="{{ url_for('turnos.nuevo') }}?servicio_id={{ servicio.id }}" class="btn btn-success">
+                        <i class="fas fa-calendar-plus"></i> Programar Turno
+                    </a>
+                    <button class="btn btn-outline-danger" onclick="eliminarServicio({{ servicio.id }}, '{{ servicio.nombre }}')">
+                        <i class="fas fa-trash"></i> Eliminar Servicio
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Información del registro -->
+        <div class="card mt-4">
+            <div class="card-header">
+                <h6 class="card-title mb-0">
+                    <i class="fas fa-info-circle"></i> Información del Registro
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="mb-2">
+                    <small class="text-muted">ID del Servicio:</small><br>
+                    <span class="badge bg-secondary">#{{ servicio.id }}</span>
+                </div>
+                <div class="mb-2">
+                    <small class="text-muted">Fecha de Creación:</small><br>
+                    <strong>{{ servicio.fecha_creacion.strftime('%d/%m/%Y a las %H:%M') if servicio.fecha_creacion else 'No disponible' }}</strong>
+                </div>
+                <div>
+                    <small class="text-muted">Estado:</small><br>
+                    <span class="badge bg-success">Activo</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-8">
+        <!-- Descripción del servicio -->
+        {% if servicio.descripcion %}
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-align-left"></i> Descripción del Servicio
+                </h5>
+            </div>
+            <div class="card-body">
+                <p class="mb-0">{{ servicio.descripcion }}</p>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Historial de turnos -->
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-calendar-alt"></i> Historial de Turnos
+                </h5>
+                <a href="{{ url_for('turnos.nuevo') }}?servicio_id={{ servicio.id }}" class="btn btn-sm btn-primary">
+                    <i class="fas fa-plus"></i> Nuevo Turno
+                </a>
+            </div>
+            <div class="card-body">
+                {% if servicio.turnos %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Fecha</th>
+                                    <th>Hora</th>
+                                    <th>Paciente</th>
+                                    <th>Médico</th>
+                                    <th>Estado</th>
+                                    <th>Precio</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for turno in servicio.turnos|sort(attribute='fecha', reverse=true) %}
+                                <tr>
+                                    <td>{{ turno.fecha.strftime('%d/%m/%Y') }}</td>
+                                    <td>{{ turno.hora.strftime('%H:%M') }}</td>
+                                    <td>
+                                        <a href="{{ url_for('clientes.detalle', id=turno.cliente.id) }}" class="text-decoration-none">
+                                            {{ turno.cliente.nombre_completo }}
+                                        </a>
+                                    </td>
+                                    <td>{{ turno.profesional.nombre_completo }}</td>
+                                    <td>
+                                        <span class="badge status-{{ turno.estado }}">
+                                            {{ turno.estado|title }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <strong>${{ "%.2f"|format(turno.precio_final or turno.servicio.precio) }}</strong>
+                                    </td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm">
+                                            <a href="{{ url_for('turnos.detalle', id=turno.id) }}" 
+                                               class="btn btn-outline-info" title="Ver detalle">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+                                            {% if turno.estado in ['pendiente', 'confirmado'] %}
+                                                <a href="{{ url_for('turnos.editar', id=turno.id) }}" 
+                                                   class="btn btn-outline-warning" title="Editar">
+                                                    <i class="fas fa-edit"></i>
+                                                </a>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-calendar-times fa-3x text-muted mb-3"></i>
+                        <h5 class="text-muted">Sin turnos registrados</h5>
+                        <p class="text-muted">Este servicio aún no tiene turnos programados.</p>
+                        <a href="{{ url_for('turnos.nuevo') }}?servicio_id={{ servicio.id }}" class="btn btn-primary">
+                            <i class="fas fa-plus"></i> Programar Primer Turno
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Estadísticas del servicio -->
+        <div class="row mt-4">
+            <div class="col-md-3">
+                <div class="card bg-primary text-white">
+                    <div class="card-body text-center">
+                        <h4 class="mb-0">{{ servicio.turnos|length }}</h4>
+                        <small>Total de Turnos</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card bg-success text-white">
+                    <div class="card-body text-center">
+                        <h4 class="mb-0">{{ servicio.turnos|selectattr('estado', 'equalto', 'completado')|list|length }}</h4>
+                        <small>Completados</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card bg-warning text-white">
+                    <div class="card-body text-center">
+                        <h4 class="mb-0">{{ servicio.turnos|selectattr('estado', 'equalto', 'pendiente')|list|length }}</h4>
+                        <small>Pendientes</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card bg-info text-white">
+                    <div class="card-body text-center">
+                        <h4 class="mb-0">${{ "%.0f"|format(servicio.turnos|selectattr('estado', 'equalto', 'completado')|map(attribute='servicio.precio')|sum) }}</h4>
+                        <small>Ingresos</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Navegación inferior -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="d-flex justify-content-between">
+            <a href="{{ url_for('servicios.listar') }}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Volver a la Lista
+            </a>
+            <div>
+                <button class="btn btn-outline-info me-2" onclick="imprimirServicio()">
+                    <i class="fas fa-print"></i> Imprimir
+                </button>
+                <button class="btn btn-outline-success" onclick="exportarReporte()">
+                    <i class="fas fa-download"></i> Exportar Reporte
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para eliminar -->
+<div class="modal fade" id="modalEliminar" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-exclamation-triangle text-warning"></i> Confirmar Eliminación
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>¿Está seguro de que desea eliminar el servicio <strong id="nombreServicioEliminar"></strong>?</p>
+                <div class="alert alert-warning">
+                    <i class="fas fa-info-circle"></i>
+                    Esta acción desactivará el servicio pero conservará el historial de turnos.
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-danger" id="confirmarEliminar">
+                    <i class="fas fa-trash"></i> Eliminar Servicio
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.service-icon {
+    opacity: 0.8;
+}
+
+.category-badge {
+    font-size: 0.9rem;
+    padding: 8px 16px;
+    border-radius: 20px;
+}
+
+.detail-item {
+    margin: 10px 0;
+    font-size: 1.1rem;
+}
+
+.detail-item i {
+    margin-right: 8px;
+}
+
+.status-pendiente { background-color: #ffc107; color: #000; }
+.status-confirmado { background-color: #17a2b8; }
+.status-completado { background-color: #28a745; }
+.status-cancelado { background-color: #dc3545; }
+
+@media print {
+    .btn, .card-header .btn, .modal { display: none !important; }
+    .card { border: 1px solid #000; margin-bottom: 1rem; }
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let servicioIdEliminar = null;
+
+function eliminarServicio(id, nombre) {
+    servicioIdEliminar = id;
+    document.getElementById('nombreServicioEliminar').textContent = nombre;
+    
+    const modal = new bootstrap.Modal(document.getElementById('modalEliminar'));
+    modal.show();
+}
+
+document.getElementById('confirmarEliminar').addEventListener('click', function() {
+    if (servicioIdEliminar) {
+        this.innerHTML = '<span class="loading"></span> Eliminando...';
+        this.disabled = true;
+        
+        fetch(`/servicios/${servicioIdEliminar}/eliminar`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                bootstrap.Modal.getInstance(document.getElementById('modalEliminar')).hide();
+                window.location.href = "{{ url_for('servicios.listar') }}";
+            } else {
+                alert('Error al eliminar servicio: ' + data.error);
+                this.innerHTML = '<i class="fas fa-trash"></i> Eliminar Servicio';
+                this.disabled = false;
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error de conexión al eliminar servicio');
+            this.innerHTML = '<i class="fas fa-trash"></i> Eliminar Servicio';
+            this.disabled = false;
+        });
+    }
+});
+
+function imprimirServicio() {
+    window.print();
+}
+
+function exportarReporte() {
+    const servicioId = {{ servicio.id }};
+    const url = `/servicios/${servicioId}/reporte`;
+    window.open(url, '_blank');
+}
+</script>
+{% endblock %}
