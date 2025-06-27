@@ -87,7 +87,8 @@ def actualizar(id):
             return jsonify({'success': True, 'categoria': categoria.to_dict()})
         
         flash('Categoría actualizada exitosamente', 'success')
-        return redirect(url_for('categorias.detalle', id=id))
+        # CORRECCIÓN: Cambiar de categorias.detalle a categorias.listar
+        return redirect(url_for('categorias.listar'))
         
     except Exception as e:
         if request.is_json:

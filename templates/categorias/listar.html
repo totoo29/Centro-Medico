@@ -181,51 +181,108 @@
     border-top: 1px solid #eee;
     padding-top: 0.75rem;
 }
+
+.loading {
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    border: 2px solid #ffffff;
+    border-radius: 50%;
+    border-top-color: transparent;
+    animation: spin 1s ease-in-out infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
 </style>
 {% endblock %}
 
 {% block extra_js %}
 <script>
-let categoriaIdEliminar = null;
-
-function eliminarCategoria(id, nombre) {
-    categoriaIdEliminar = id;
-    document.getElementById('nombreCategoria').textContent = nombre;
+(function() {
+    'use strict';
     
-    const modal = new bootstrap.Modal(document.getElementById('modalEliminar'));
-    modal.show();
-}
+    let categoriaIdEliminar = null;
 
-document.getElementById('confirmarEliminar').addEventListener('click', function() {
-    if (categoriaIdEliminar) {
-        this.innerHTML = '<span class="loading"></span> Eliminando...';
-        this.disabled = true;
+    function eliminarCategoria(id, nombre) {
+        categoriaIdEliminar = id;
+        var nombreElement = document.getElementById('nombreCategoria');
+        if (nombreElement) {
+            nombreElement.textContent = nombre;
+        }
         
-        fetch(`/categorias/${categoriaIdEliminar}/eliminar`, {
+        var modalElement = document.getElementById('modalEliminar');
+        if (modalElement && typeof bootstrap !== 'undefined') {
+            var modal = new bootstrap.Modal(modalElement);
+            modal.show();
+        }
+    }
+
+    function confirmarEliminacion() {
+        if (!categoriaIdEliminar) {
+            return;
+        }
+
+        var botonConfirmar = document.getElementById('confirmarEliminar');
+        if (!botonConfirmar) {
+            return;
+        }
+
+        botonConfirmar.innerHTML = '<span class="loading"></span> Eliminando...';
+        botonConfirmar.disabled = true;
+        
+        fetch('/categorias/' + categoriaIdEliminar + '/eliminar', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
                 'X-Requested-With': 'XMLHttpRequest'
             }
         })
-        .then(response => response.json())
-        .then(data => {
+        .then(function(response) {
+            return response.json();
+        })
+        .then(function(data) {
             if (data.success) {
-                bootstrap.Modal.getInstance(document.getElementById('modalEliminar')).hide();
+                var modalElement = document.getElementById('modalEliminar');
+                if (modalElement && typeof bootstrap !== 'undefined') {
+                    var modalInstance = bootstrap.Modal.getInstance(modalElement);
+                    if (modalInstance) {
+                        modalInstance.hide();
+                    }
+                }
                 window.location.reload();
             } else {
-                alert('Error al eliminar categoría: ' + data.error);
-                this.innerHTML = '<i class="fas fa-trash"></i> Eliminar Categoría';
-                this.disabled = false;
+                alert('Error al eliminar categoría: ' + (data.error || 'Error desconocido'));
+                resetearBoton();
             }
         })
-        .catch(error => {
+        .catch(function(error) {
             console.error('Error:', error);
             alert('Error de conexión al eliminar categoría');
-            this.innerHTML = '<i class="fas fa-trash"></i> Eliminar Categoría';
-            this.disabled = false;
+            resetearBoton();
         });
     }
-});
+
+    function resetearBoton() {
+        var botonConfirmar = document.getElementById('confirmarEliminar');
+        if (botonConfirmar) {
+            botonConfirmar.innerHTML = '<i class="fas fa-trash"></i> Eliminar Categoría';
+            botonConfirmar.disabled = false;
+        }
+    }
+
+    // Event listener para el botón de confirmar eliminación
+    document.addEventListener('DOMContentLoaded', function() {
+        var botonConfirmar = document.getElementById('confirmarEliminar');
+        if (botonConfirmar) {
+            botonConfirmar.addEventListener('click', confirmarEliminacion);
+        }
+    });
+
+    // Hacer la función eliminarCategoria accesible globalmente para onclick
+    window.eliminarCategoria = eliminarCategoria;
+
+})();
 </script>
 {% endblock %}
