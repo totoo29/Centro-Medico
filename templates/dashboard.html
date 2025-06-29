@@ -3,6 +3,27 @@
 {% block title %}Dashboard - Consultorio Médico{% endblock %}
 {% block page_title %}Dashboard Principal{% endblock %}
 
+{% block extra_css %}
+<style>
+.status-pendiente {
+    background-color: #ffc107;
+    color: #000;
+}
+.status-confirmado {
+    background-color: #17a2b8;
+    color: #fff;
+}
+.status-completado {
+    background-color: #28a745;
+    color: #fff;
+}
+.status-cancelado {
+    background-color: #dc3545;
+    color: #fff;
+}
+</style>
+{% endblock %}
+
 {% block content %}
 <!-- Estadísticas principales -->
 <div class="row mb-4">

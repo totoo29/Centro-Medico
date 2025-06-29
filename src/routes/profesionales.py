@@ -143,16 +143,43 @@ def api_todos():
 @profesionales_bp.route('/<int:id>/horarios')
 @login_required
 def horarios(id):
-    """Ver horarios disponibles de un profesional"""
+    """Ver y gestionar horarios de un profesional"""
     profesional = ProfesionalService.get_profesional_by_id(id)
     if not profesional:
         flash('Profesional no encontrado', 'error')
         return redirect(url_for('profesionales.listar'))
     
-    fecha = request.args.get('fecha')
-    horarios_disponibles = ProfesionalService.get_horarios_disponibles(id, fecha)
+    # Por ahora usamos horarios por defecto
+    # En el futuro esto vendría de la base de datos
+    horarios_default = {
+        'lunes': {'activo': True, 'inicio': '09:00', 'fin': '17:00'},
+        'martes': {'activo': True, 'inicio': '09:00', 'fin': '17:00'},
+        'miercoles': {'activo': True, 'inicio': '09:00', 'fin': '17:00'},
+        'jueves': {'activo': True, 'inicio': '09:00', 'fin': '17:00'},
+        'viernes': {'activo': True, 'inicio': '09:00', 'fin': '17:00'},
+        'sabado': {'activo': False, 'inicio': '09:00', 'fin': '13:00'},
+        'domingo': {'activo': False, 'inicio': '09:00', 'fin': '13:00'}
+    }
     
     return render_template('profesionales/horarios.html', 
                          profesional=profesional,
-                         horarios=horarios_disponibles,
-                         fecha=fecha)
+                         horarios=horarios_default)
+
+@profesionales_bp.route('/<int:id>/horarios/actualizar', methods=['POST'])
+@login_required
+def actualizar_horarios(id):
+    """Actualizar horarios de un profesional"""
+    profesional = ProfesionalService.get_profesional_by_id(id)
+    if not profesional:
+        flash('Profesional no encontrado', 'error')
+        return redirect(url_for('profesionales.listar'))
+    
+    try:
+        # Por ahora solo mostramos un mensaje
+        # En el futuro aquí se guardarían los horarios en la base de datos
+        flash('Horarios actualizados correctamente (funcionalidad en desarrollo)', 'success')
+        return redirect(url_for('profesionales.horarios', id=id))
+        
+    except Exception as e:
+        flash(f'Error al actualizar horarios: {str(e)}', 'error')
+        return redirect(url_for('profesionales.horarios', id=id))

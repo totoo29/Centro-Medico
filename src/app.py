@@ -1,4 +1,3 @@
-# src/app.py - Versión actualizada con filtros corregidos
 from flask import Flask, render_template, redirect, url_for
 from flask_login import current_user
 from src.database import init_db
@@ -80,6 +79,24 @@ def register_template_filters(app):
         app.jinja_env.globals['fecha_hoy_iso'] = fecha_hoy_iso
         app.jinja_env.globals['date_today'] = lambda: date.today().isoformat()
         
+        # CORRECCIÓN ESPECÍFICA PARA EL CALENDARIO
+        @app.template_filter('strftime')
+        def strftime_filter(fecha, formato='%Y-%m-%d'):
+            """Filtro strftime para fechas"""
+            if not fecha:
+                return ''
+            
+            if isinstance(fecha, str):
+                try:
+                    fecha = datetime.strptime(fecha, '%Y-%m-%d').date()
+                except ValueError:
+                    return fecha
+            
+            if hasattr(fecha, 'strftime'):
+                return fecha.strftime(formato)
+            
+            return str(fecha)
+        
         print("✅ Filtros de plantillas registrados correctamente")
         
     except ImportError as e:
@@ -96,7 +113,7 @@ def register_template_filters(app):
         
         @app.template_filter('date')
         def date_filter(fecha_obj, formato='%Y-%m-%d'):
-            """Filtro de fecha con fallback"""
+            """Filtro de fecha con fallback mejorado"""
             if not fecha_obj:
                 return ''
             
@@ -111,6 +128,11 @@ def register_template_filters(app):
                 return fecha_obj.strftime(formato)
             
             return str(fecha_obj)
+        
+        @app.template_filter('strftime')
+        def strftime_filter(fecha, formato='%Y-%m-%d'):
+            """Filtro strftime de fallback"""
+            return date_filter(fecha, formato)
         
         # Función global para fecha de hoy
         app.jinja_env.globals['date_today'] = lambda: date.today().isoformat()

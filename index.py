@@ -280,70 +280,70 @@ def create_sample_data():
             {
                 'nombre': 'Consulta Médica General',
                 'descripcion': 'Consulta médica clínica general',
-                'precio': 50.00,
+                'precio': 5000.00,
                 'duracion': 30,
                 'categoria_id': categoria_generales.id
             },
             {
                 'nombre': 'Consulta Cardiológica',
                 'descripcion': 'Consulta con especialista en cardiología',
-                'precio': 80.00,
+                'precio': 8000.00,
                 'duracion': 45,
                 'categoria_id': categoria_especialidades.id
             },
             {
                 'nombre': 'Consulta Traumatológica',
                 'descripcion': 'Consulta con especialista en traumatología',
-                'precio': 75.00,
+                'precio': 7500.00,
                 'duracion': 40,
                 'categoria_id': categoria_especialidades.id
             },
             {
                 'nombre': 'Consulta Dermatológica',
                 'descripcion': 'Consulta con especialista en dermatología',
-                'precio': 70.00,
+                'precio': 7000.00,
                 'duracion': 35,
                 'categoria_id': categoria_especialidades.id
             },
             {
                 'nombre': 'Análisis de Sangre',
                 'descripcion': 'Extracción y análisis de sangre completo',
-                'precio': 25.00,
+                'precio': 2500.00,
                 'duracion': 15,
                 'categoria_id': categoria_estudios.id
             },
             {
                 'nombre': 'Electrocardiograma',
                 'descripcion': 'Estudio cardiológico ECG',
-                'precio': 30.00,
+                'precio': 3000.00,
                 'duracion': 20,
                 'categoria_id': categoria_estudios.id
             },
             {
                 'nombre': 'Control de Presión',
                 'descripcion': 'Control y seguimiento de presión arterial',
-                'precio': 15.00,
+                'precio': 1500.00,
                 'duracion': 15,
                 'categoria_id': categoria_controles.id
             },
             {
                 'nombre': 'Curación',
                 'descripcion': 'Curación de heridas y procedimientos menores',
-                'precio': 20.00,
+                'precio': 2000.00,
                 'duracion': 20,
                 'categoria_id': categoria_procedimientos.id
             },
             {
                 'nombre': 'Inyección Intramuscular',
                 'descripcion': 'Aplicación de inyecciones intramusculares',
-                'precio': 10.00,
+                'precio': 1000.00,
                 'duracion': 10,
                 'categoria_id': categoria_procedimientos.id
             },
             {
                 'nombre': 'Control Post-Operatorio',
                 'descripcion': 'Control y seguimiento post-operatorio',
-                'precio': 40.00,
+                'precio': 4000.00,
                 'duracion': 25,
                 'categoria_id': categoria_controles.id
             }

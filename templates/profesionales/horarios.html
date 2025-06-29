@@ -1,0 +1,653 @@
+{% extends "base.html" %}
+
+{% block title %}Horarios - {{ profesional.nombre_completo }} - Consultorio Médico{% endblock %}
+{% block page_title %}Configuración de Horarios{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-4">
+        <!-- Información del médico -->
+        <div class="card">
+            <div class="card-body text-center">
+                <div class="doctor-avatar-large mb-3">
+                    <i class="fas fa-user-md"></i>
+                </div>
+                <h4 class="card-title">{{ profesional.nombre_completo }}</h4>
+                {% if profesional.especialidad %}
+                    <div class="specialty-badge-large mb-3">
+                        <i class="fas fa-stethoscope"></i>
+                        {{ profesional.especialidad }}
+                    </div>
+                {% endif %}
+                <p class="text-muted mb-3">ID: #{{ profesional.id }}</p>
+                
+                <div class="d-grid gap-2">
+                    <a href="{{ url_for('profesionales.detalle', id=profesional.id) }}" class="btn btn-outline-info">
+                        <i class="fas fa-eye"></i> Ver Perfil Completo
+                    </a>
+                    <a href="{{ url_for('profesionales.editar', id=profesional.id) }}" class="btn btn-outline-warning">
+                        <i class="fas fa-edit"></i> Editar Información
+                    </a>
+                    <a href="{{ url_for('turnos.nuevo') }}?profesional_id={{ profesional.id }}" class="btn btn-success">
+                        <i class="fas fa-calendar-plus"></i> Nuevo Turno
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Resumen de disponibilidad -->
+        <div class="card mt-4">
+            <div class="card-header">
+                <h6 class="card-title mb-0">
+                    <i class="fas fa-chart-pie"></i> Resumen de Disponibilidad
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="availability-summary">
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Días laborables:</span>
+                        <strong id="diasLaborables">5 días</strong>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Horas semanales:</span>
+                        <strong id="horasSemanales">40 horas</strong>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                        <span>Intervalo turnos:</span>
+                        <strong>30 minutos</strong>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Configuraciones adicionales -->
+        <div class="card mt-4">
+            <div class="card-header">
+                <h6 class="card-title mb-0">
+                    <i class="fas fa-cog"></i> Configuraciones Adicionales
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <label for="intervaloTurnos" class="form-label">Intervalo entre turnos:</label>
+                    <select class="form-select" id="intervaloTurnos">
+                        <option value="15">15 minutos</option>
+                        <option value="30" selected>30 minutos</option>
+                        <option value="45">45 minutos</option>
+                        <option value="60">60 minutos</option>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label for="tiempoDescanso" class="form-label">Tiempo de descanso:</label>
+                    <select class="form-select" id="tiempoDescanso">
+                        <option value="0">Sin descanso</option>
+                        <option value="30">30 minutos</option>
+                        <option value="60" selected>60 minutos</option>
+                        <option value="90">90 minutos</option>
+                    </select>
+                </div>
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="permitirSolapamiento">
+                    <label class="form-check-label" for="permitirSolapamiento">
+                        Permitir solapamiento de turnos
+                    </label>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-8">
+        <!-- Formulario de horarios -->
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-calendar-week"></i> Horarios de Atención Semanal
+                </h5>
+                <div class="btn-group btn-group-sm">
+                    <button type="button" class="btn btn-outline-success" onclick="aplicarATodos()">
+                        <i class="fas fa-copy"></i> Aplicar a todos
+                    </button>
+                    <button type="button" class="btn btn-outline-secondary" onclick="resetearHorarios()">
+                        <i class="fas fa-undo"></i> Resetear
+                    </button>
+                </div>
+            </div>
+            <div class="card-body">
+                <form id="formHorarios" method="POST" action="{{ url_for('profesionales.actualizar_horarios', id=profesional.id) }}">
+                    
+                    <!-- Plantilla de horario tipo -->
+                    <div class="alert alert-info mb-4">
+                        <h6><i class="fas fa-lightbulb"></i> Plantilla Rápida</h6>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <label for="plantillaInicio" class="form-label">Hora de inicio:</label>
+                                <input type="time" class="form-control" id="plantillaInicio" value="09:00">
+                            </div>
+                            <div class="col-md-6">
+                                <label for="plantillaFin" class="form-label">Hora de fin:</label>
+                                <input type="time" class="form-control" id="plantillaFin" value="17:00">
+                            </div>
+                        </div>
+                        <button type="button" class="btn btn-sm btn-primary mt-2" onclick="aplicarPlantilla()">
+                            <i class="fas fa-magic"></i> Aplicar a días laborables
+                        </button>
+                    </div>
+
+                    <!-- Horarios por día -->
+                    {% set dias = [
+                        ('lunes', 'Lunes'),
+                        ('martes', 'Martes'),
+                        ('miercoles', 'Miércoles'),
+                        ('jueves', 'Jueves'),
+                        ('viernes', 'Viernes'),
+                        ('sabado', 'Sábado'),
+                        ('domingo', 'Domingo')
+                    ] %}
+                    
+                    {% for dia_key, dia_nombre in dias %}
+                    <div class="row mb-3 day-schedule" data-day="{{ dia_key }}">
+                        <div class="col-md-2 d-flex align-items-center">
+                            <div class="form-check">
+                                <input class="form-check-input day-active" type="checkbox" 
+                                       id="activo_{{ dia_key }}" name="activo_{{ dia_key }}"
+                                       {% if horarios[dia_key].activo %}checked{% endif %}>
+                                <label class="form-check-label fw-bold" for="activo_{{ dia_key }}">
+                                    {{ dia_nombre }}
+                                </label>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="inicio_{{ dia_key }}" class="form-label small">Hora de inicio:</label>
+                            <input type="time" class="form-control hour-input" 
+                                   id="inicio_{{ dia_key }}" name="inicio_{{ dia_key }}"
+                                   value="{{ horarios[dia_key].inicio }}"
+                                   {% if not horarios[dia_key].activo %}disabled{% endif %}>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="fin_{{ dia_key }}" class="form-label small">Hora de fin:</label>
+                            <input type="time" class="form-control hour-input" 
+                                   id="fin_{{ dia_key }}" name="fin_{{ dia_key }}"
+                                   value="{{ horarios[dia_key].fin }}"
+                                   {% if not horarios[dia_key].activo %}disabled{% endif %}>
+                        </div>
+                        <div class="col-md-2 d-flex align-items-end">
+                            <span class="badge bg-info" id="duracion_{{ dia_key }}">
+                                {% if horarios[dia_key].activo %}8h{% else %}-{% endif %}
+                            </span>
+                        </div>
+                    </div>
+                    {% endfor %}
+
+                    <!-- Botones de acción -->
+                    <div class="row mt-4">
+                        <div class="col-12">
+                            <div class="d-flex justify-content-between">
+                                <a href="{{ url_for('profesionales.detalle', id=profesional.id) }}" class="btn btn-secondary">
+                                    <i class="fas fa-arrow-left"></i> Volver al Perfil
+                                </a>
+                                
+                                <div>
+                                    <button type="button" class="btn btn-outline-info me-2" onclick="previsualizarCalendario()">
+                                        <i class="fas fa-eye"></i> Previsualizar
+                                    </button>
+                                    <button type="submit" class="btn btn-success" id="btnGuardar">
+                                        <i class="fas fa-save"></i> Guardar Horarios
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Horarios especiales (futuro) -->
+        <div class="card mt-4">
+            <div class="card-header">
+                <h6 class="card-title mb-0">
+                    <i class="fas fa-calendar-plus"></i> Horarios Especiales
+                    <span class="badge bg-warning">Próximamente</span>
+                </h6>
+            </div>
+            <div class="card-body">
+                <p class="text-muted mb-3">
+                    Aquí podrá configurar horarios especiales para fechas específicas, 
+                    vacaciones, feriados, etc.
+                </p>
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="special-schedule-item">
+                            <i class="fas fa-calendar-times text-danger"></i>
+                            <strong>Vacaciones</strong>
+                            <p class="small text-muted mb-0">Períodos de ausencia prolongada</p>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="special-schedule-item">
+                            <i class="fas fa-clock text-warning"></i>
+                            <strong>Horarios especiales</strong>
+                            <p class="small text-muted mb-0">Cambios puntuales de horario</p>
+                        </div>
+                    </div>
+                </div>
+                <button type="button" class="btn btn-outline-primary btn-sm" disabled>
+                    <i class="fas fa-plus"></i> Agregar Horario Especial
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de previsualización -->
+<div class="modal fade" id="modalPreview" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-calendar-week"></i> Previsualización de Horarios
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="table-responsive">
+                    <table class="table table-bordered preview-table">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Día</th>
+                                <th>Estado</th>
+                                <th>Horario</th>
+                                <th>Duración</th>
+                                <th>Turnos posibles</th>
+                            </tr>
+                        </thead>
+                        <tbody id="previewTableBody">
+                            <!-- Generado dinámicamente -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.doctor-avatar-large {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2rem;
+    margin: 0 auto;
+}
+
+.specialty-badge-large {
+    background: #e8f5e8;
+    color: #2e7d32;
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-size: 0.9em;
+    font-weight: 500;
+    display: inline-block;
+}
+
+.day-schedule {
+    padding: 1rem;
+    border: 1px solid #eee;
+    border-radius: 8px;
+    margin-bottom: 0.5rem;
+    transition: all 0.3s;
+}
+
+.day-schedule:hover {
+    background-color: #f8f9fa;
+}
+
+.day-schedule.disabled {
+    background-color: #f8f9fa;
+    opacity: 0.6;
+}
+
+.availability-summary {
+    border-top: 1px solid #eee;
+    padding-top: 1rem;
+}
+
+.special-schedule-item {
+    padding: 1rem;
+    border: 1px dashed #dee2e6;
+    border-radius: 8px;
+    text-align: center;
+    margin-bottom: 1rem;
+}
+
+.preview-table {
+    font-size: 0.9rem;
+}
+
+.hour-input:disabled {
+    background-color: #f8f9fa;
+    opacity: 0.6;
+}
+
+/* Estados de los días */
+.day-active:checked + label {
+    color: #198754;
+    font-weight: bold;
+}
+
+.form-check-input:checked {
+    background-color: #198754;
+    border-color: #198754;
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Manejar activación/desactivación de días
+    document.querySelectorAll('.day-active').forEach(checkbox => {
+        checkbox.addEventListener('change', function() {
+            const dia = this.id.split('_')[1];
+            const inputs = document.querySelectorAll(`[id*="${dia}"]`);
+            const schedule = this.closest('.day-schedule');
+            
+            if (this.checked) {
+                schedule.classList.remove('disabled');
+                inputs.forEach(input => {
+                    if (input.type === 'time') {
+                        input.disabled = false;
+                    }
+                });
+            } else {
+                schedule.classList.add('disabled');
+                inputs.forEach(input => {
+                    if (input.type === 'time') {
+                        input.disabled = true;
+                    }
+                });
+            }
+            
+            actualizarDuracion(dia);
+            actualizarResumen();
+        });
+    });
+
+    // Manejar cambios en horarios
+    document.querySelectorAll('.hour-input').forEach(input => {
+        input.addEventListener('change', function() {
+            const dia = this.id.split('_')[1];
+            actualizarDuracion(dia);
+            actualizarResumen();
+        });
+    });
+
+    // Actualizar duraciones iniciales
+    ['lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado', 'domingo'].forEach(dia => {
+        actualizarDuracion(dia);
+    });
+    
+    actualizarResumen();
+});
+
+function actualizarDuracion(dia) {
+    const activo = document.getElementById(`activo_${dia}`).checked;
+    const inicio = document.getElementById(`inicio_${dia}`).value;
+    const fin = document.getElementById(`fin_${dia}`).value;
+    const duracionSpan = document.getElementById(`duracion_${dia}`);
+    
+    if (!activo || !inicio || !fin) {
+        duracionSpan.textContent = '-';
+        duracionSpan.className = 'badge bg-secondary';
+        return;
+    }
+    
+    const inicioMinutos = timeToMinutes(inicio);
+    const finMinutos = timeToMinutes(fin);
+    
+    if (finMinutos <= inicioMinutos) {
+        duracionSpan.textContent = 'Error';
+        duracionSpan.className = 'badge bg-danger';
+        return;
+    }
+    
+    const duracionMinutos = finMinutos - inicioMinutos;
+    const horas = Math.floor(duracionMinutos / 60);
+    const minutos = duracionMinutos % 60;
+    
+    let texto = '';
+    if (horas > 0) {
+        texto += `${horas}h`;
+    }
+    if (minutos > 0) {
+        texto += `${minutos}m`;
+    }
+    
+    duracionSpan.textContent = texto;
+    duracionSpan.className = 'badge bg-info';
+}
+
+function timeToMinutes(time) {
+    const [hours, minutes] = time.split(':').map(Number);
+    return hours * 60 + minutes;
+}
+
+function actualizarResumen() {
+    let diasLaborables = 0;
+    let horasSemanales = 0;
+    
+    ['lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado', 'domingo'].forEach(dia => {
+        const activo = document.getElementById(`activo_${dia}`).checked;
+        if (activo) {
+            diasLaborables++;
+            
+            const inicio = document.getElementById(`inicio_${dia}`).value;
+            const fin = document.getElementById(`fin_${dia}`).value;
+            
+            if (inicio && fin) {
+                const duracionMinutos = timeToMinutes(fin) - timeToMinutes(inicio);
+                if (duracionMinutos > 0) {
+                    horasSemanales += duracionMinutos / 60;
+                }
+            }
+        }
+    });
+    
+    document.getElementById('diasLaborables').textContent = `${diasLaborables} días`;
+    document.getElementById('horasSemanales').textContent = `${horasSemanales.toFixed(1)} horas`;
+}
+
+function aplicarPlantilla() {
+    const inicio = document.getElementById('plantillaInicio').value;
+    const fin = document.getElementById('plantillaFin').value;
+    
+    if (!inicio || !fin) {
+        alert('Por favor, complete la hora de inicio y fin en la plantilla');
+        return;
+    }
+    
+    // Aplicar a días laborables (lunes a viernes)
+    ['lunes', 'martes', 'miercoles', 'jueves', 'viernes'].forEach(dia => {
+        document.getElementById(`activo_${dia}`).checked = true;
+        document.getElementById(`inicio_${dia}`).value = inicio;
+        document.getElementById(`fin_${dia}`).value = fin;
+        document.getElementById(`inicio_${dia}`).disabled = false;
+        document.getElementById(`fin_${dia}`).disabled = false;
+        
+        const schedule = document.querySelector(`[data-day="${dia}"]`);
+        schedule.classList.remove('disabled');
+        
+        actualizarDuracion(dia);
+    });
+    
+    actualizarResumen();
+    
+    // Mostrar confirmación
+    showToast('Plantilla aplicada a días laborables', 'success');
+}
+
+function aplicarATodos() {
+    const primerDiaActivo = ['lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado', 'domingo']
+        .find(dia => document.getElementById(`activo_${dia}`).checked);
+    
+    if (!primerDiaActivo) {
+        alert('Active al menos un día para usar como plantilla');
+        return;
+    }
+    
+    const inicio = document.getElementById(`inicio_${primerDiaActivo}`).value;
+    const fin = document.getElementById(`fin_${primerDiaActivo}`).value;
+    
+    if (!inicio || !fin) {
+        alert('Complete los horarios del día activo para usar como plantilla');
+        return;
+    }
+    
+    if (confirm('¿Aplicar el horario de ' + primerDiaActivo + ' a todos los días activos?')) {
+        ['lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado', 'domingo'].forEach(dia => {
+            if (document.getElementById(`activo_${dia}`).checked) {
+                document.getElementById(`inicio_${dia}`).value = inicio;
+                document.getElementById(`fin_${dia}`).value = fin;
+                actualizarDuracion(dia);
+            }
+        });
+        
+        actualizarResumen();
+        showToast('Horarios aplicados a todos los días activos', 'success');
+    }
+}
+
+function resetearHorarios() {
+    if (confirm('¿Resetear todos los horarios a la configuración por defecto?')) {
+        // Activar lunes a viernes, desactivar fin de semana
+        ['lunes', 'martes', 'miercoles', 'jueves', 'viernes'].forEach(dia => {
+            document.getElementById(`activo_${dia}`).checked = true;
+            document.getElementById(`inicio_${dia}`).value = '09:00';
+            document.getElementById(`fin_${dia}`).value = '17:00';
+            document.getElementById(`inicio_${dia}`).disabled = false;
+            document.getElementById(`fin_${dia}`).disabled = false;
+            
+            const schedule = document.querySelector(`[data-day="${dia}"]`);
+            schedule.classList.remove('disabled');
+            
+            actualizarDuracion(dia);
+        });
+        
+        ['sabado', 'domingo'].forEach(dia => {
+            document.getElementById(`activo_${dia}`).checked = false;
+            document.getElementById(`inicio_${dia}`).value = '09:00';
+            document.getElementById(`fin_${dia}`).value = '13:00';
+            document.getElementById(`inicio_${dia}`).disabled = true;
+            document.getElementById(`fin_${dia}`).disabled = true;
+            
+            const schedule = document.querySelector(`[data-day="${dia}"]`);
+            schedule.classList.add('disabled');
+            
+            actualizarDuracion(dia);
+        });
+        
+        actualizarResumen();
+        showToast('Horarios reseteados a configuración por defecto', 'info');
+    }
+}
+
+function previsualizarCalendario() {
+    const tbody = document.getElementById('previewTableBody');
+    tbody.innerHTML = '';
+    
+    const dias = [
+        ['lunes', 'Lunes'],
+        ['martes', 'Martes'],
+        ['miercoles', 'Miércoles'],
+        ['jueves', 'Jueves'],
+        ['viernes', 'Viernes'],
+        ['sabado', 'Sábado'],
+        ['domingo', 'Domingo']
+    ];
+    
+    dias.forEach(([dia_key, dia_nombre]) => {
+        const activo = document.getElementById(`activo_${dia_key}`).checked;
+        const inicio = document.getElementById(`inicio_${dia_key}`).value;
+        const fin = document.getElementById(`fin_${dia_key}`).value;
+        
+        const row = document.createElement('tr');
+        
+        let estado, horario, duracion, turnos;
+        
+        if (activo && inicio && fin) {
+            const duracionMinutos = timeToMinutes(fin) - timeToMinutes(inicio);
+            const horas = Math.floor(duracionMinutos / 60);
+            const minutos = duracionMinutos % 60;
+            
+            estado = '<span class="badge bg-success">Activo</span>';
+            horario = `${inicio} - ${fin}`;
+            duracion = `${horas}h ${minutos}m`;
+            turnos = Math.floor(duracionMinutos / 30); // Asumiendo turnos de 30 min
+        } else {
+            estado = '<span class="badge bg-secondary">Inactivo</span>';
+            horario = '-';
+            duracion = '-';
+            turnos = 0;
+        }
+        
+        row.innerHTML = `
+            <td>${dia_nombre}</td>
+            <td>${estado}</td>
+            <td>${horario}</td>
+            <td>${duracion}</td>
+            <td>${turnos} turnos</td>
+        `;
+        
+        tbody.appendChild(row);
+    });
+    
+    const modal = new bootstrap.Modal(document.getElementById('modalPreview'));
+    modal.show();
+}
+
+function showToast(message, type) {
+    const alertDiv = document.createElement('div');
+    alertDiv.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
+    alertDiv.style.cssText = 'top: 20px; right: 20px; z-index: 9999; max-width: 400px;';
+    alertDiv.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    
+    document.body.appendChild(alertDiv);
+    
+    setTimeout(() => {
+        if (alertDiv.parentNode) {
+            alertDiv.parentNode.removeChild(alertDiv);
+        }
+    }, 3000);
+}
+
+// Envío del formulario
+document.getElementById('formHorarios').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const btnGuardar = document.getElementById('btnGuardar');
+    const textoOriginal = btnGuardar.innerHTML;
+    
+    btnGuardar.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Guardando...';
+    btnGuardar.disabled = true;
+    
+    // Simular guardado (en el futuro enviaría los datos al servidor)
+    setTimeout(() => {
+        showToast('Configuración de horarios guardada correctamente', 'success');
+        btnGuardar.innerHTML = textoOriginal;
+        btnGuardar.disabled = false;
+    }, 1500);
+});
+</script>
+{% endblock %}

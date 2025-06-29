@@ -8,6 +8,354 @@ import pandas as pd
 class TurnoService:
     
     @staticmethod
+    def get_turnos_by_fecha_range(fecha_inicio, fecha_fin, profesional_id=None):
+        """Obtener turnos en un rango de fechas"""
+        query = Turno.query.filter(
+            Turno.fecha >= fecha_inicio,
+            Turno.fecha <= fecha_fin
+        )
+        
+        if profesional_id:
+            query = query.filter(Turno.profesional_id == profesional_id)
+        
+        return query.order_by(Turno.fecha, Turno.hora).all()
+
+    @staticmethod
+    def organizar_turnos_por_fecha(turnos):
+        """Organizar lista de turnos por fecha"""
+        turnos_por_fecha = {}
+        
+        for turno in turnos:
+            fecha_str = turno.fecha.isoformat()
+            if fecha_str not in turnos_por_fecha:
+                turnos_por_fecha[fecha_str] = []
+            
+            turnos_por_fecha[fecha_str].append({
+                'id': turno.id,
+                'hora': turno.hora.strftime('%H:%M'),
+                'cliente': turno.cliente.nombre_completo,
+                'profesional': turno.profesional.nombre_completo,
+                'servicio': turno.servicio.nombre,
+                'estado': turno.estado,
+                'duracion': turno.servicio.duracion,
+                'precio': float(turno.precio_final or turno.servicio.precio or 0)
+            })
+        
+        return turnos_por_fecha
+
+    @staticmethod
+    def calcular_estadisticas_periodo(turnos):
+        """Calcular estadísticas para un período de turnos"""
+        if not turnos:
+            return {
+                'total_turnos': 0,
+                'pendientes': 0,
+                'confirmados': 0,
+                'completados': 0,
+                'cancelados': 0,
+                'ingresos_total': 0
+            }
+        
+        estadisticas = {
+            'total_turnos': len(turnos),
+            'pendientes': sum(1 for t in turnos if t.estado == 'pendiente'),
+            'confirmados': sum(1 for t in turnos if t.estado == 'confirmado'),
+            'completados': sum(1 for t in turnos if t.estado == 'completado'),
+            'cancelados': sum(1 for t in turnos if t.estado == 'cancelado'),
+            'ingresos_total': sum(
+                float(t.precio_final or t.servicio.precio or 0) 
+                for t in turnos if t.estado == 'completado'
+            )
+        }
+        
+        return estadisticas
+
+    @staticmethod
+    def verificar_disponibilidad_extendida(profesional_id, fecha, hora, duracion, excluir_turno_id=None):
+        """Verificación de disponibilidad más robusta"""
+        from datetime import datetime, timedelta
+        
+        # Buscar turnos que se solapen
+        query = Turno.query.filter(
+            Turno.profesional_id == profesional_id,
+            Turno.fecha == fecha,
+            Turno.estado.in_(['pendiente', 'confirmado'])
+        )
+        
+        if excluir_turno_id:
+            query = query.filter(Turno.id != excluir_turno_id)
+        
+        turnos_existentes = query.all()
+        
+        # Convertir hora a datetime para facilitar cálculos
+        if isinstance(hora, str):
+            hora_obj = datetime.strptime(hora, '%H:%M').time()
+        else:
+            hora_obj = hora
+        
+        inicio_nuevo = datetime.combine(fecha, hora_obj)
+        fin_nuevo = inicio_nuevo + timedelta(minutes=duracion)
+        
+        for turno in turnos_existentes:
+            inicio_existente = datetime.combine(fecha, turno.hora)
+            fin_existente = inicio_existente + timedelta(minutes=turno.servicio.duracion)
+            
+            # Verificar solapamiento
+            if inicio_nuevo < fin_existente and fin_nuevo > inicio_existente:
+                return False
+        
+        return True
+
+    @staticmethod
+    def get_horarios_disponibles_mejorado(profesional_id, fecha, servicio_id=None):
+        """Obtener horarios disponibles mejorado para el calendario"""
+        from datetime import datetime, time, timedelta
+        
+        if isinstance(fecha, str):
+            try:
+                fecha_obj = datetime.strptime(fecha, '%Y-%m-%d').date()
+            except ValueError:
+                return []
+        else:
+            fecha_obj = fecha
+        
+        # No permitir fechas pasadas
+        if fecha_obj < date.today():
+            return []
+        
+        # Obtener duración del servicio
+        duracion = 60  # Por defecto 60 minutos
+        if servicio_id:
+            servicio = Servicio.query.get(servicio_id)
+            if servicio:
+                duracion = servicio.duracion
+        
+        # Verificar que el profesional existe
+        profesional = Profesional.query.get(profesional_id)
+        if not profesional:
+            return []
+        
+        # Configuración de horarios (esto podría venir de configuración del profesional)
+        # Horarios típicos de consultorio médico
+        horarios_trabajo = {
+            'lunes': {'inicio': time(8, 0), 'fin': time(18, 0)},
+            'martes': {'inicio': time(8, 0), 'fin': time(18, 0)},
+            'miercoles': {'inicio': time(8, 0), 'fin': time(18, 0)},
+            'jueves': {'inicio': time(8, 0), 'fin': time(18, 0)},
+            'viernes': {'inicio': time(8, 0), 'fin': time(18, 0)},
+            'sabado': {'inicio': time(9, 0), 'fin': time(13, 0)},
+            'domingo': None  # No trabaja domingos
+        }
+        
+        dias_semana = ['lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado', 'domingo']
+        dia_actual = dias_semana[fecha_obj.weekday()]
+        
+        # Verificar si trabaja ese día
+        horario_dia = horarios_trabajo.get(dia_actual)
+        if not horario_dia:
+            return []
+        
+        hora_inicio = horario_dia['inicio']
+        hora_fin = horario_dia['fin']
+        intervalo = 30  # Intervalos de 30 minutos
+        
+        # Obtener turnos ocupados para esa fecha y profesional
+        turnos_ocupados = Turno.query.filter(
+            Turno.profesional_id == profesional_id,
+            Turno.fecha == fecha_obj,
+            Turno.estado.in_(['pendiente', 'confirmado'])
+        ).all()
+        
+        # Generar horarios disponibles
+        horarios_disponibles = []
+        hora_actual = datetime.combine(fecha_obj, hora_inicio)
+        hora_limite = datetime.combine(fecha_obj, hora_fin)
+        
+        while hora_actual + timedelta(minutes=duracion) <= hora_limite:
+            # Verificar si hay conflicto con algún turno existente
+            disponible = True
+            
+            for turno in turnos_ocupados:
+                inicio_turno = datetime.combine(fecha_obj, turno.hora)
+                fin_turno = inicio_turno + timedelta(minutes=turno.servicio.duracion)
+                fin_nuevo_turno = hora_actual + timedelta(minutes=duracion)
+                
+                # Verificar solapamiento
+                if hora_actual < fin_turno and fin_nuevo_turno > inicio_turno:
+                    disponible = False
+                    break
+            
+            if disponible:
+                horarios_disponibles.append(hora_actual.time().strftime('%H:%M'))
+            
+            hora_actual += timedelta(minutes=intervalo)
+        
+        return horarios_disponibles
+
+    @staticmethod
+    def crear_turno_validado(data):
+        """Crear turno con validaciones extendidas"""
+        # Validaciones básicas
+        required_fields = ['fecha', 'hora', 'cliente_id', 'profesional_id', 'servicio_id']
+        for field in required_fields:
+            if not data.get(field):
+                raise ValueError(f'{field} es obligatorio')
+        
+        # Convertir y validar fecha
+        try:
+            if isinstance(data['fecha'], str):
+                fecha_turno = datetime.strptime(data['fecha'], '%Y-%m-%d').date()
+            else:
+                fecha_turno = data['fecha']
+        except ValueError:
+            raise ValueError('Formato de fecha inválido (use YYYY-MM-DD)')
+        
+        # Convertir y validar hora
+        try:
+            if isinstance(data['hora'], str):
+                hora_turno = datetime.strptime(data['hora'], '%H:%M').time()
+            else:
+                hora_turno = data['hora']
+        except ValueError:
+            raise ValueError('Formato de hora inválido (use HH:MM)')
+        
+        # No permitir turnos en el pasado
+        fecha_hora_turno = datetime.combine(fecha_turno, hora_turno)
+        if fecha_hora_turno < datetime.now():
+            raise ValueError('No se pueden crear turnos en el pasado')
+        
+        # Verificar que existan los registros relacionados
+        cliente = Cliente.query.filter_by(id=data['cliente_id'], activo=True).first()
+        if not cliente:
+            raise ValueError('Cliente no encontrado o inactivo')
+        
+        profesional = Profesional.query.filter_by(id=data['profesional_id'], activo=True).first()
+        if not profesional:
+            raise ValueError('Profesional no encontrado o inactivo')
+        
+        servicio = Servicio.query.filter_by(id=data['servicio_id'], activo=True).first()
+        if not servicio:
+            raise ValueError('Servicio no encontrado o inactivo')
+        
+        # Verificar disponibilidad del profesional
+        if not TurnoService.verificar_disponibilidad_extendida(
+            data['profesional_id'], fecha_turno, hora_turno, servicio.duracion
+        ):
+            raise ValueError('El profesional no está disponible en ese horario')
+        
+        # Validar estado
+        estado = data.get('estado', 'pendiente')
+        estados_validos = ['pendiente', 'confirmado', 'completado', 'cancelado']
+        if estado not in estados_validos:
+            raise ValueError(f'Estado debe ser uno de: {", ".join(estados_validos)}')
+        
+        # Validar precio final si se proporciona
+        precio_final = data.get('precio_final')
+        if precio_final:
+            try:
+                precio_final = float(precio_final)
+                if precio_final < 0:
+                    raise ValueError('El precio no puede ser negativo')
+            except (ValueError, TypeError):
+                raise ValueError('Precio final debe ser un número válido')
+        
+        # Crear turno
+        turno = Turno(
+            fecha=fecha_turno,
+            hora=hora_turno,
+            estado=estado,
+            observaciones=data.get('observaciones', '').strip() or None,
+            precio_final=precio_final,
+            cliente_id=data['cliente_id'],
+            profesional_id=data['profesional_id'],
+            servicio_id=data['servicio_id']
+        )
+        
+        try:
+            db.session.add(turno)
+            db.session.commit()
+            return turno
+        except Exception as e:
+            db.session.rollback()
+            raise ValueError(f'Error al guardar el turno: {str(e)}')
+
+    @staticmethod
+    def get_calendario_data(vista, fecha_base, profesional_id=None):
+        """Obtener datos estructurados para el calendario"""
+        from datetime import timedelta
+        import calendar
+        
+        if vista == 'dia':
+            fecha_inicio = fecha_base
+            fecha_fin = fecha_base
+            titulo = fecha_base.strftime('%A, %d de %B de %Y')
+        elif vista == 'semana':
+            # Encontrar el lunes de la semana
+            dias_desde_lunes = fecha_base.weekday()
+            fecha_inicio = fecha_base - timedelta(days=dias_desde_lunes)
+            fecha_fin = fecha_inicio + timedelta(days=6)
+            titulo = f"Semana del {fecha_inicio.strftime('%d/%m')} al {fecha_fin.strftime('%d/%m/%Y')}"
+        else:  # mes
+            fecha_inicio = fecha_base.replace(day=1)
+            if fecha_base.month == 12:
+                siguiente_mes = fecha_base.replace(year=fecha_base.year + 1, month=1)
+            else:
+                siguiente_mes = fecha_base.replace(month=fecha_base.month + 1)
+            fecha_fin = siguiente_mes - timedelta(days=1)
+            titulo = fecha_base.strftime('%B %Y')
+        
+        # Obtener turnos
+        turnos = TurnoService.get_turnos_by_fecha_range(fecha_inicio, fecha_fin, profesional_id)
+        turnos_por_fecha = TurnoService.organizar_turnos_por_fecha(turnos)
+        estadisticas = TurnoService.calcular_estadisticas_periodo(turnos)
+        
+        # Generar estructura específica según la vista
+        fechas = []
+        semanas = []
+        
+        if vista == 'dia':
+            fechas = [fecha_base]
+        elif vista == 'semana':
+            fechas = [fecha_inicio + timedelta(days=i) for i in range(7)]
+        else:  # mes
+            # Generar calendario mensual
+            primer_dia = fecha_base.replace(day=1)
+            ultimo_dia = fecha_fin
+            
+            # Encontrar el primer día del calendario (lunes anterior o igual)
+            dias_desde_lunes = primer_dia.weekday()
+            inicio_calendario = primer_dia - timedelta(days=dias_desde_lunes)
+            
+            fecha_actual = inicio_calendario
+            while fecha_actual <= ultimo_dia or len(semanas) == 0:
+                semana = []
+                for i in range(7):
+                    dia_actual = fecha_actual + timedelta(days=i)
+                    semana.append({
+                        'fecha': dia_actual,
+                        'es_mes_actual': dia_actual.month == fecha_base.month,
+                        'turnos': turnos_por_fecha.get(dia_actual.isoformat(), [])
+                    })
+                semanas.append(semana)
+                fecha_actual += timedelta(days=7)
+                
+                # Evitar bucle infinito - máximo 6 semanas
+                if len(semanas) >= 6:
+                    break
+        
+        return {
+            'vista': vista,
+            'titulo': titulo,
+            'fecha_inicio': fecha_inicio,
+            'fecha_fin': fecha_fin,
+            'fechas': fechas,
+            'semanas': semanas,
+            'horarios': list(range(8, 20)),  # 8:00 a 19:00
+            'turnos_por_fecha': turnos_por_fecha,
+            'estadisticas': estadisticas
+        }
+    
+    @staticmethod
     def get_all_turnos():
         """Obtener todos los turnos"""
         return Turno.query.order_by(Turno.fecha.desc(), Turno.hora.desc()).all()
@@ -447,3 +795,66 @@ class TurnoService:
         
         filename = f'turnos_{date.today().strftime("%Y%m%d")}'
         return generar_csv(data, filename)
+    
+    @staticmethod
+    def get_turnos_by_fecha_range(fecha_inicio, fecha_fin, profesional_id=None):
+        """Obtener turnos en un rango de fechas"""
+        query = Turno.query.filter(
+            Turno.fecha >= fecha_inicio,
+            Turno.fecha <= fecha_fin
+        )
+        
+        if profesional_id:
+            query = query.filter(Turno.profesional_id == profesional_id)
+        
+        return query.order_by(Turno.fecha, Turno.hora).all()
+
+    @staticmethod
+    def organizar_turnos_por_fecha(turnos):
+        """Organizar lista de turnos por fecha"""
+        turnos_por_fecha = {}
+        
+        for turno in turnos:
+            fecha_str = turno.fecha.isoformat()
+            if fecha_str not in turnos_por_fecha:
+                turnos_por_fecha[fecha_str] = []
+            
+            turnos_por_fecha[fecha_str].append({
+                'id': turno.id,
+                'hora': turno.hora.strftime('%H:%M'),
+                'cliente': turno.cliente.nombre_completo,
+                'profesional': turno.profesional.nombre_completo,
+                'servicio': turno.servicio.nombre,
+                'estado': turno.estado,
+                'duracion': turno.servicio.duracion,
+                'precio': float(turno.precio_final or turno.servicio.precio or 0)
+            })
+        
+        return turnos_por_fecha
+
+    @staticmethod
+    def calcular_estadisticas_periodo(turnos):
+        """Calcular estadísticas para un período de turnos"""
+        if not turnos:
+            return {
+                'total_turnos': 0,
+                'pendientes': 0,
+                'confirmados': 0,
+                'completados': 0,
+                'cancelados': 0,
+                'ingresos_total': 0
+            }
+        
+        estadisticas = {
+            'total_turnos': len(turnos),
+            'pendientes': sum(1 for t in turnos if t.estado == 'pendiente'),
+            'confirmados': sum(1 for t in turnos if t.estado == 'confirmado'),
+            'completados': sum(1 for t in turnos if t.estado == 'completado'),
+            'cancelados': sum(1 for t in turnos if t.estado == 'cancelado'),
+            'ingresos_total': sum(
+                float(t.precio_final or t.servicio.precio or 0) 
+                for t in turnos if t.estado == 'completado'
+            )
+        }
+        
+        return estadisticas
