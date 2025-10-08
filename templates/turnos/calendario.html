@@ -86,7 +86,7 @@
                 <!-- Vista Diaria -->
                 <div id="vistaDiaria" class="calendar-view" {% if vista != 'dia' %}style="display: none;"{% endif %}>
                     <div class="daily-header text-center mb-3 p-3 bg-light">
-                        <h5 class="mb-0" id="fechaDiaria">{{ fecha_base.strftime('%A, %d de %B de %Y') }}</h5>
+                        <h5 class="mb-0" id="fechaDiaria">{{ formatear_fecha_es(fecha_base, 'completo') }}</h5>
                     </div>
                     <div class="table-responsive">
                         <table class="table table-bordered">
@@ -132,7 +132,7 @@
                                     {% if calendario_data.fechas %}
                                         {% for fecha in calendario_data.fechas %}
                                         <th class="text-center">
-                                            <div>{{ fecha.strftime('%A')[:3] }}</div>
+                                            <div>{{ formatear_fecha_es(fecha, 'dia_corto') }}</div>
                                             <div class="fw-bold">{{ fecha.strftime('%d/%m') }}</div>
                                         </th>
                                         {% endfor %}
@@ -597,8 +597,14 @@ function crearTurnoRapido(fecha, hora) {
     document.getElementById('horaTurno').value = hora;
     
     const fechaObj = new Date(fecha + 'T' + hora);
+    const opciones = { 
+        weekday: 'long', 
+        year: 'numeric', 
+        month: 'long', 
+        day: 'numeric' 
+    };
     document.getElementById('fechaHoraTurno').textContent = 
-        fechaObj.toLocaleDateString('es-AR') + ' a las ' + hora;
+        fechaObj.toLocaleDateString('es-ES', opciones) + ' a las ' + hora;
     
     // Configurar enlace al formulario completo
     const params = new URLSearchParams();

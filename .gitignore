@@ -1,7 +1,168 @@
+# ===========================================
+# ENTORNO VIRTUAL Y DEPENDENCIAS
+# ===========================================
 venv/
+env/
+ENV/
+.venv/
+.env/
+.ENV/
+pip-log.txt
+pip-delete-this-directory.txt
+
+# ===========================================
+# ARCHIVOS DE CONFIGURACIÓN SENSIBLES
+# ===========================================
 .env
+.env.local
+.env.development
+.env.test
+.env.production
+.flaskenv
+config_local.py
+secrets.py
 
+# ===========================================
+# ARCHIVOS DE PYTHON
+# ===========================================
 __pycache__/
-*.py[co]
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
 
+# ===========================================
+# BASE DE DATOS
+# ===========================================
+*.db
+*.sqlite
+*.sqlite3
+instance/
+*.db-journal
+*.db-wal
+*.db-shm
+
+# ===========================================
+# LOGS Y ARCHIVOS TEMPORALES
+# ===========================================
+*.log
+logs/
+*.tmp
+*.temp
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+
+# ===========================================
+# TESTING Y COVERAGE
+# ===========================================
 .pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.nox/
+coverage.xml
+*.cover
+.hypothesis/
+.pytest_cache/
+.cache/
+nosetests.xml
+coverage.xml
+*.cover
+.hypothesis/
+
+# ===========================================
+# IDEs Y EDITORES
+# ===========================================
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.project
+.pydevproject
+.settings/
+*.sublime-project
+*.sublime-workspace
+
+# ===========================================
+# ARCHIVOS DE SISTEMA
+# ===========================================
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+desktop.ini
+
+# ===========================================
+# ARCHIVOS DE BACKUP
+# ===========================================
+*.bak
+*.backup
+*.old
+*.orig
+*.rej
+*~
+
+# ===========================================
+# ARCHIVOS DE EXPORTACIÓN
+# ===========================================
+exports/
+backups/
+*.xlsx
+*.csv
+*.pdf
+reports/
+
+# ===========================================
+# ARCHIVOS DE MIGRACIÓN (OPCIONAL)
+# ===========================================
+# migrations/versions/*.py
+# !migrations/versions/__init__.py
+
+# ===========================================
+# ARCHIVOS ESPECÍFICOS DEL PROYECTO
+# ===========================================
+# Archivos de configuración local
+config_local.py
+local_settings.py
+
+# Archivos de sesión
+flask_session/
+
+# Archivos de cache
+.cache/
+cache/
+
+# Archivos de uploads temporales
+uploads/temp/
+temp_uploads/
+
+# ===========================================
+# ARCHIVOS DE DEPLOYMENT
+# ===========================================
+.dockerignore
+Dockerfile.local
+docker-compose.override.yml
+.kubernetes/

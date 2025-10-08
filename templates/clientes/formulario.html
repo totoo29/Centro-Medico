@@ -70,6 +70,83 @@
                         </div>
                     </div>
 
+                    <!-- Sección de Obra Social -->
+                    <div class="card bg-light mb-3">
+                        <div class="card-header">
+                            <h6 class="card-title mb-0">
+                                <i class="fas fa-hospital"></i> Información de Obra Social
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <!-- Obra Social -->
+                                <div class="col-md-6 mb-3">
+                                    <label for="obra_social_id" class="form-label">
+                                        <i class="fas fa-hospital"></i> Obra Social
+                                    </label>
+                                    <select class="form-select" id="obra_social_id" name="obra_social_id">
+                                        <option value="">Seleccionar obra social...</option>
+                                        <option value="particular" {% if cliente and not cliente.obra_social_id %}selected{% endif %}>Particular</option>
+                                    </select>
+                                    <div class="form-text">Seleccione la obra social del paciente</div>
+                                    <div class="invalid-feedback"></div>
+                                </div>
+
+                                <!-- Plan de Obra Social -->
+                                <div class="col-md-6 mb-3">
+                                    <label for="plan_id" class="form-label">
+                                        <i class="fas fa-clipboard-list"></i> Plan
+                                    </label>
+                                    <select class="form-select" id="plan_id" name="plan_id" {% if not cliente or not cliente.obra_social_id %}disabled{% endif %}>
+                                        <option value="">Seleccionar plan...</option>
+                                    </select>
+                                    <div class="form-text">Seleccione el plan correspondiente</div>
+                                    <div class="invalid-feedback"></div>
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <!-- Número de Afiliado -->
+                                <div class="col-md-6 mb-3">
+                                    <label for="numero_afiliado" class="form-label">
+                                        <i class="fas fa-id-card"></i> Número de Afiliado
+                                    </label>
+                                    <input type="text" class="form-control" id="numero_afiliado" name="numero_afiliado" 
+                                           value="{{ cliente.numero_afiliado if cliente and cliente.numero_afiliado else '' }}"
+                                           placeholder="12345678">
+                                    <div class="form-text">Número de afiliado a la obra social</div>
+                                    <div class="invalid-feedback"></div>
+                                </div>
+
+                                <!-- Grupo Familiar -->
+                                <div class="col-md-6 mb-3">
+                                    <label for="grupo_familiar" class="form-label">
+                                        <i class="fas fa-users"></i> Grupo Familiar
+                                    </label>
+                                    <input type="text" class="form-control" id="grupo_familiar" name="grupo_familiar" 
+                                           value="{{ cliente.grupo_familiar if cliente and cliente.grupo_familiar else '' }}"
+                                           placeholder="Titular, Cónyuge, Hijo, etc.">
+                                    <div class="form-text">Rol en el grupo familiar</div>
+                                    <div class="invalid-feedback"></div>
+                                </div>
+                            </div>
+
+                            <!-- Titular del Grupo Familiar -->
+                            <div class="row">
+                                <div class="col-12 mb-3">
+                                    <label for="titular_id" class="form-label">
+                                        <i class="fas fa-user-tie"></i> Titular del Grupo Familiar
+                                    </label>
+                                    <select class="form-select" id="titular_id" name="titular_id">
+                                        <option value="">Sin titular (es titular)</option>
+                                    </select>
+                                    <div class="form-text">Seleccione si es familiar de otro paciente</div>
+                                    <div class="invalid-feedback"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
                     <!-- Vista previa de la información -->
                     <div class="row mb-3">
                         <div class="col-12">
@@ -86,6 +163,16 @@
                                         <div class="col-md-6">
                                             <strong>Contacto:</strong><br>
                                             <span id="previewContacto" class="text-muted">-</span>
+                                        </div>
+                                    </div>
+                                    <div class="row mt-2">
+                                        <div class="col-md-6">
+                                            <strong>Obra Social:</strong><br>
+                                            <span id="previewObraSocial" class="text-muted">-</span>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <strong>Plan:</strong><br>
+                                            <span id="previewPlan" class="text-muted">-</span>
                                         </div>
                                     </div>
                                 </div>
@@ -181,30 +268,212 @@
 
 {% block extra_js %}
 <script>
-// Validación en tiempo real y vista previa
+// Variables globales
+let obrasSociales = [];
+let planes = [];
+let clientes = [];
+
+// Cargar datos al inicializar
 document.addEventListener('DOMContentLoaded', function() {
+    cargarObrasSociales();
+    cargarClientes();
+    
     const campos = {
         nombre: document.getElementById('nombre'),
         apellido: document.getElementById('apellido'),
         telefono: document.getElementById('telefono'),
-        email: document.getElementById('email')
+        email: document.getElementById('email'),
+        obra_social_id: document.getElementById('obra_social_id'),
+        plan_id: document.getElementById('plan_id'),
+        numero_afiliado: document.getElementById('numero_afiliado'),
+        grupo_familiar: document.getElementById('grupo_familiar'),
+        titular_id: document.getElementById('titular_id')
     };
 
     // Actualizar vista previa cuando cambian los campos
     Object.values(campos).forEach(campo => {
         campo.addEventListener('input', actualizarVistaPrevia);
-        campo.addEventListener('blur', validarCampo);
+        campo.addEventListener('change', actualizarVistaPrevia);
+        if (campo.id !== 'titular_id') {
+            campo.addEventListener('blur', validarCampo);
+        }
     });
+
+    // Eventos especiales
+    document.getElementById('obra_social_id').addEventListener('change', onObraSocialChange);
+    document.getElementById('plan_id').addEventListener('change', onPlanChange);
 
     // Actualizar vista previa inicial
     actualizarVistaPrevia();
+    
+    // Cargar datos del cliente si estamos editando
+    {% if cliente %}
+        cargarDatosCliente();
+    {% endif %}
 });
 
+// Cargar obras sociales desde la API
+async function cargarObrasSociales() {
+    try {
+        const response = await fetch('/obras-sociales/api/listar');
+        if (response.ok) {
+            obrasSociales = await response.json();
+            poblarObrasSociales();
+        }
+    } catch (error) {
+        console.error('Error al cargar obras sociales:', error);
+    }
+}
+
+// Cargar clientes para el campo titular
+async function cargarClientes() {
+    try {
+        const response = await fetch('/clientes/buscar?limit=100');
+        if (response.ok) {
+            clientes = await response.json();
+            poblarClientes();
+        }
+    } catch (error) {
+        console.error('Error al cargar clientes:', error);
+    }
+}
+
+// Poblar select de obras sociales
+function poblarObrasSociales() {
+    const select = document.getElementById('obra_social_id');
+    const valorActual = select.value;
+    
+    // Mantener la opción "Particular"
+    select.innerHTML = '<option value="">Seleccionar obra social...</option><option value="particular">Particular</option>';
+    
+    obrasSociales.forEach(obra => {
+        if (obra.activo) {
+            const option = document.createElement('option');
+            option.value = obra.id;
+            option.textContent = `${obra.nombre} (${obra.codigo})`;
+            if (obra.id == valorActual) {
+                option.selected = true;
+            }
+            select.appendChild(option);
+        }
+    });
+}
+
+// Poblar select de clientes
+function poblarClientes() {
+    const select = document.getElementById('titular_id');
+    const valorActual = select.value;
+    
+    select.innerHTML = '<option value="">Sin titular (es titular)</option>';
+    
+    clientes.forEach(cliente => {
+        if (cliente.activo && cliente.id != '{{ cliente.id if cliente else 0 }}') {
+            const option = document.createElement('option');
+            option.value = cliente.id;
+            option.textContent = `${cliente.nombre} ${cliente.apellido}`;
+            if (cliente.id == valorActual) {
+                option.selected = true;
+            }
+            select.appendChild(option);
+        }
+    });
+}
+
+// Cuando cambia la obra social
+async function onObraSocialChange() {
+    const obraSocialId = document.getElementById('obra_social_id').value;
+    const planSelect = document.getElementById('plan_id');
+    
+    // Limpiar planes
+    planSelect.innerHTML = '<option value="">Seleccionar plan...</option>';
+    planSelect.disabled = true;
+    
+    if (obraSocialId && obraSocialId !== 'particular') {
+        try {
+            const response = await fetch(`/obras-sociales/${obraSocialId}/planes/api`);
+            if (response.ok) {
+                planes = await response.json();
+                poblarPlanes();
+                planSelect.disabled = false;
+            }
+        } catch (error) {
+            console.error('Error al cargar planes:', error);
+        }
+    }
+    
+    actualizarVistaPrevia();
+}
+
+// Poblar select de planes
+function poblarPlanes() {
+    const select = document.getElementById('plan_id');
+    const valorActual = select.value;
+    
+    select.innerHTML = '<option value="">Seleccionar plan...</option>';
+    
+    planes.forEach(plan => {
+        if (plan.activo) {
+            const option = document.createElement('option');
+            option.value = plan.id;
+            option.textContent = `${plan.nombre} - ${plan.cobertura_display}`;
+            if (plan.id == valorActual) {
+                option.selected = true;
+            }
+            select.appendChild(option);
+        }
+    });
+}
+
+// Cuando cambia el plan
+function onPlanChange() {
+    actualizarVistaPrevia();
+}
+
+// Cargar datos del cliente para edición
+function cargarDatosCliente() {
+    const cliente = {
+        obra_social_id: '{{ cliente.obra_social_id if cliente and cliente.obra_social_id else "" }}',
+        plan_id: '{{ cliente.plan_id if cliente and cliente.plan_id else "" }}',
+        numero_afiliado: '{{ cliente.numero_afiliado if cliente and cliente.numero_afiliado else "" }}',
+        grupo_familiar: '{{ cliente.grupo_familiar if cliente and cliente.grupo_familiar else "" }}',
+        titular_id: '{{ cliente.titular_id if cliente and cliente.titular_id else "" }}'
+    };
+    
+    // Establecer valores
+    if (cliente.obra_social_id) {
+        document.getElementById('obra_social_id').value = cliente.obra_social_id;
+        onObraSocialChange();
+    }
+    
+    if (cliente.plan_id) {
+        setTimeout(() => {
+            document.getElementById('plan_id').value = cliente.plan_id;
+        }, 500);
+    }
+    
+    if (cliente.numero_afiliado) {
+        document.getElementById('numero_afiliado').value = cliente.numero_afiliado;
+    }
+    
+    if (cliente.grupo_familiar) {
+        document.getElementById('grupo_familiar').value = cliente.grupo_familiar;
+    }
+    
+    if (cliente.titular_id) {
+        setTimeout(() => {
+            document.getElementById('titular_id').value = cliente.titular_id;
+        }, 500);
+    }
+}
+
+// Actualizar vista previa
 function actualizarVistaPrevia() {
     const nombre = document.getElementById('nombre').value.trim();
     const apellido = document.getElementById('apellido').value.trim();
     const telefono = document.getElementById('telefono').value.trim();
     const email = document.getElementById('email').value.trim();
+    const obraSocialId = document.getElementById('obra_social_id').value;
+    const planId = document.getElementById('plan_id').value;
 
     // Nombre completo
     const nombreCompleto = [nombre, apellido].filter(x => x).join(' ') || 'Sin nombre';
@@ -217,8 +486,27 @@ function actualizarVistaPrevia() {
     
     document.getElementById('previewContacto').textContent = 
         contactos.length > 0 ? contactos.join(' | ') : 'Sin datos de contacto';
+
+    // Obra Social
+    let obraSocialText = 'Sin obra social';
+    if (obraSocialId === 'particular') {
+        obraSocialText = 'Particular';
+    } else if (obraSocialId) {
+        const obra = obrasSociales.find(o => o.id == obraSocialId);
+        obraSocialText = obra ? obra.nombre : 'Obra social seleccionada';
+    }
+    document.getElementById('previewObraSocial').textContent = obraSocialText;
+
+    // Plan
+    let planText = 'Sin plan';
+    if (planId) {
+        const plan = planes.find(p => p.id == planId);
+        planText = plan ? `${plan.nombre} (${plan.cobertura_display})` : 'Plan seleccionado';
+    }
+    document.getElementById('previewPlan').textContent = planText;
 }
 
+// Validación en tiempo real y vista previa
 function validarCampo(event) {
     const campo = event.target;
     const valor = campo.value.trim();
@@ -254,6 +542,13 @@ function validarCampo(event) {
         case 'email':
             if (valor && !validarEmail(valor)) {
                 mostrarError(campo, 'Formato de email no válido');
+                return false;
+            }
+            break;
+            
+        case 'numero_afiliado':
+            if (valor && valor.length < 3) {
+                mostrarError(campo, 'El número de afiliado debe tener al menos 3 caracteres');
                 return false;
             }
             break;
@@ -296,6 +591,10 @@ function limpiarFormulario() {
         document.querySelectorAll('.is-valid, .is-invalid').forEach(el => {
             el.classList.remove('is-valid', 'is-invalid');
         });
+        
+        // Limpiar campos de obra social
+        document.getElementById('plan_id').innerHTML = '<option value="">Seleccionar plan...</option>';
+        document.getElementById('plan_id').disabled = true;
         
         // Actualizar vista previa
         actualizarVistaPrevia();

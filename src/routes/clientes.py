@@ -205,10 +205,14 @@ def exportar():
         
         if formato == 'excel':
             return ClienteService.exportar_excel(search)
-        else:
+        elif formato == 'csv':
             return ClienteService.exportar_csv(search)
+        else:
+            flash('Formato de exportación no válido', 'error')
+            return redirect(url_for('clientes.listar'))
             
     except Exception as e:
+        print(f"Error en exportación de clientes: {e}")
         flash(f'Error al exportar: {str(e)}', 'error')
         return redirect(url_for('clientes.listar'))
 
@@ -284,5 +288,25 @@ def register_blueprints(app):
         print(f"⚠️ Error al registrar blueprint 'turnos': {e}")
     except Exception as e:
         print(f"❌ Error inesperado con blueprint 'turnos': {e}")
+    
+    # Registrar blueprint obras sociales
+    try:
+        from .obras_sociales import obras_sociales_bp
+        app.register_blueprint(obras_sociales_bp, url_prefix='/obras-sociales')
+        print("✅ Blueprint 'obras_sociales' registrado correctamente")
+    except ImportError as e:
+        print(f"⚠️ Error al registrar blueprint 'obras_sociales': {e}")
+    except Exception as e:
+        print(f"❌ Error inesperado con blueprint 'obras_sociales': {e}")
+    
+    # Registrar blueprint autorizaciones
+    try:
+        from .autorizaciones import autorizaciones_bp
+        app.register_blueprint(autorizaciones_bp, url_prefix='/autorizaciones')
+        print("✅ Blueprint 'autorizaciones' registrado correctamente")
+    except ImportError as e:
+        print(f"⚠️ Error al registrar blueprint 'autorizaciones': {e}")
+    except Exception as e:
+        print(f"❌ Error inesperado con blueprint 'autorizaciones': {e}")
     
     print("🎯 Registro de blueprints completado")

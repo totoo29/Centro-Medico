@@ -8,13 +8,12 @@ import sys
 from flask import render_template, Flask
 import click
 from flask import Flask
-from src.database import db
+from src.config_db import db
 from src.models import Usuario
 
 # Agregar el directorio actual al path de Python
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from src.database import db
 from src.models import Cliente, Categoria, Profesional, Servicio, Turno
 from src.models.usuario import Usuario
 from src.app import create_app
@@ -230,6 +229,90 @@ def create_sample_data():
         db.session.commit()
         print("✅ Categorías de ejemplo creadas")
         
+        # Crear obras sociales de ejemplo
+        from src.models.obra_social import ObraSocial
+        from src.models.plan_obra_social import PlanObraSocial
+        
+        obras_sociales = [
+            {
+                'nombre': 'OSDE',
+                'codigo': 'OSDE001',
+                'tipo': 'obra_social',
+                'cuit': '30-12345678-9',
+                'porcentaje_cobertura': 80.0,
+                'requiere_autorizacion': True,
+                'dias_autorizacion': 7
+            },
+            {
+                'nombre': 'Swiss Medical',
+                'codigo': 'SWISS001',
+                'tipo': 'prepaga',
+                'cuit': '30-87654321-0',
+                'porcentaje_cobertura': 90.0,
+                'requiere_autorizacion': False,
+                'dias_autorizacion': 0
+            },
+            {
+                'nombre': 'Particular',
+                'codigo': 'PART001',
+                'tipo': 'particular',
+                'porcentaje_cobertura': 0.0,
+                'requiere_autorizacion': False,
+                'dias_autorizacion': 0
+            }
+        ]
+        
+        for os_data in obras_sociales:
+            obra_social = ObraSocial(**os_data)
+            db.session.add(obra_social)
+        
+        db.session.commit()
+        print("✅ Obras sociales de ejemplo creadas")
+        
+        # Crear planes de obra social
+        osde = ObraSocial.query.filter_by(codigo='OSDE001').first()
+        swiss = ObraSocial.query.filter_by(codigo='SWISS001').first()
+        
+        planes = [
+            {
+                'nombre': 'OSDE 310',
+                'codigo': 'OSDE310',
+                'obra_social_id': osde.id,
+                'porcentaje_cobertura': 80.0,
+                'copago': 500.0,
+                'coseguro': 0.0,
+                'requiere_autorizacion': True,
+                'dias_autorizacion': 7
+            },
+            {
+                'nombre': 'OSDE 410',
+                'codigo': 'OSDE410',
+                'obra_social_id': osde.id,
+                'porcentaje_cobertura': 90.0,
+                'copago': 200.0,
+                'coseguro': 0.0,
+                'requiere_autorizacion': True,
+                'dias_autorizacion': 5
+            },
+            {
+                'nombre': 'Swiss Medical Premium',
+                'codigo': 'SWISS_PREMIUM',
+                'obra_social_id': swiss.id,
+                'porcentaje_cobertura': 90.0,
+                'copago': 0.0,
+                'coseguro': 0.0,
+                'requiere_autorizacion': False,
+                'dias_autorizacion': 0
+            }
+        ]
+        
+        for plan_data in planes:
+            plan = PlanObraSocial(**plan_data)
+            db.session.add(plan)
+        
+        db.session.commit()
+        print("✅ Planes de obra social de ejemplo creados")
+        
         # Crear profesionales médicos de ejemplo
         profesionales = [
             {
@@ -406,6 +489,8 @@ def create_sample_data():
         print("\n🎉 ¡Datos de ejemplo creados exitosamente!")
         print("📋 Resumen:")
         print(f"   • {len(categorias)} categorías médicas")
+        print(f"   • {len(obras_sociales)} obras sociales")
+        print(f"   • {len(planes)} planes de obra social")
         print(f"   • {len(profesionales)} médicos especialistas")
         print(f"   • {len(servicios)} servicios médicos")
         print(f"   • {len(clientes)} pacientes")
@@ -413,6 +498,8 @@ def create_sample_data():
     except Exception as e:
         db.session.rollback()
         print(f"❌ Error al crear datos de ejemplo: {str(e)}")
+        import traceback
+        traceback.print_exc()
 
 @app.cli.command()
 def reset_db():
@@ -424,7 +511,7 @@ def reset_db():
         db.drop_all()
         db.create_all()
         print("✅ Base de datos reseteada correctamente")
-        print("💡 Recuerda crear un usuario administrador con: flask create-admin")
+        print("💡 Recuerda crear un usuario administrador con: flask reset-db")
     else:
         print("❌ Operación cancelada")
 

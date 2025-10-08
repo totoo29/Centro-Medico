@@ -3,6 +3,7 @@ from src.database import db
 
 class Categoria(db.Model):
     __tablename__ = 'categorias'
+    __table_args__ = {'extend_existing': True}
     
     id = db.Column(db.Integer, primary_key=True)
     nombre = db.Column(db.String(100), nullable=False, unique=True)

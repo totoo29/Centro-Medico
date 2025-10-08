@@ -1,0 +1,272 @@
+{% extends "base.html" %}
+
+{% block title %}{{ obra_social.nombre }} - Centro Médico{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3 mb-0 text-gray-800">
+                <i class="fas fa-hospital-user mr-2"></i>{{ obra_social.nombre }}
+            </h1>
+            <p class="text-muted">
+                <span class="badge {% if obra_social.tipo == 'obra_social' %}bg-primary{% elif obra_social.tipo == 'prepaga' %}bg-success{% elif obra_social.tipo == 'particular' %}bg-warning{% else %}bg-secondary{% endif %}">
+                    {{ obra_social.tipo_display }}
+                </span>
+                <span class="badge bg-secondary ms-2">{{ obra_social.codigo }}</span>
+            </p>
+        </div>
+        <div>
+            <a href="{{ url_for('obras_sociales.listar') }}" class="btn btn-secondary me-2">
+                <i class="fas fa-arrow-left mr-2"></i>Volver
+            </a>
+            <a href="{{ url_for('obras_sociales.editar', id=obra_social.id) }}" class="btn btn-warning me-2">
+                <i class="fas fa-edit mr-2"></i>Editar
+            </a>
+            <a href="{{ url_for('obras_sociales.listar_planes', obra_social_id=obra_social.id) }}" class="btn btn-primary">
+                <i class="fas fa-list mr-2"></i>Ver Planes
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Información principal -->
+        <div class="col-lg-8">
+            <!-- Información básica -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="fas fa-info-circle mr-2"></i>Información Básica
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p><strong>Nombre:</strong> {{ obra_social.nombre }}</p>
+                            <p><strong>Código:</strong> <code>{{ obra_social.codigo }}</code></p>
+                            <p><strong>Tipo:</strong> {{ obra_social.tipo_display }}</p>
+                            <p><strong>Estado:</strong> 
+                                <span class="badge {% if obra_social.activo %}bg-success{% else %}bg-danger{% endif %}">
+                                    {% if obra_social.activo %}Activa{% else %}Inactiva{% endif %}
+                                </span>
+                            </p>
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>Fecha de Creación:</strong> {{ obra_social.fecha_creacion|date('%d/%m/%Y %H:%M') }}</p>
+                            <p><strong>Última Modificación:</strong> {{ obra_social.fecha_modificacion|date('%d/%m/%Y %H:%M') }}</p>
+                            {% if obra_social.cuit %}
+                            <p><strong>CUIT:</strong> <code>{{ obra_social.cuit }}</code></p>
+                            {% endif %}
+                            {% if obra_social.direccion %}
+                            <p><strong>Dirección:</strong> {{ obra_social.direccion }}</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Información de contacto -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="fas fa-phone mr-2"></i>Información de Contacto
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            {% if obra_social.telefono %}
+                            <p><strong>Teléfono:</strong> <i class="fas fa-phone mr-2"></i>{{ obra_social.telefono }}</p>
+                            {% endif %}
+                            {% if obra_social.email %}
+                            <p><strong>Email:</strong> <i class="fas fa-envelope mr-2"></i>{{ obra_social.email }}</p>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6">
+                            {% if obra_social.contacto_nombre %}
+                            <p><strong>Contacto Principal:</strong> {{ obra_social.contacto_nombre }}</p>
+                            {% if obra_social.contacto_telefono %}
+                            <p><strong>Teléfono del Contacto:</strong> <i class="fas fa-phone mr-2"></i>{{ obra_social.contacto_telefono }}</p>
+                            {% endif %}
+                            {% if obra_social.contacto_email %}
+                            <p><strong>Email del Contacto:</strong> <i class="fas fa-envelope mr-2"></i>{{ obra_social.contacto_email }}</p>
+                            {% endif %}
+                            {% else %}
+                            <p class="text-muted">No se ha especificado un contacto principal</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Información de cobertura -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="fas fa-shield-alt mr-2"></i>Información de Cobertura
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p><strong>Porcentaje de Cobertura:</strong> 
+                                <span class="badge {% if obra_social.porcentaje_cobertura > 0 %}bg-success{% else %}bg-secondary{% endif %}">
+                                    {{ obra_social.cobertura_display }}
+                                </span>
+                            </p>
+                            <p><strong>Requiere Autorización:</strong> 
+                                {% if obra_social.requiere_autorizacion %}
+                                <span class="badge bg-warning">Sí</span>
+                                {% else %}
+                                <span class="badge bg-success">No</span>
+                                {% endif %}
+                            </p>
+                        </div>
+                        <div class="col-md-6">
+                            {% if obra_social.requiere_autorizacion %}
+                            <p><strong>Días de Anticipación:</strong> 
+                                <span class="badge bg-info">{{ obra_social.dias_autorizacion }} días</span>
+                            </p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Notas -->
+            {% if obra_social.notas %}
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="fas fa-sticky-note mr-2"></i>Notas Adicionales
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <p class="mb-0">{{ obra_social.notas }}</p>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Sidebar con estadísticas -->
+        <div class="col-lg-4">
+            <!-- Estadísticas rápidas -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="fas fa-chart-bar mr-2"></i>Estadísticas
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="text-center mb-3">
+                        <div class="h4 text-primary">{{ planes|length }}</div>
+                        <div class="text-muted">Planes Activos</div>
+                    </div>
+                    <hr>
+                    <div class="text-center mb-3">
+                        <div class="h4 text-success">
+                            {% if obra_social.requiere_autorizacion %}
+                            <i class="fas fa-clock"></i>
+                            {% else %}
+                            <i class="fas fa-check-circle"></i>
+                            {% endif %}
+                        </div>
+                        <div class="text-muted">
+                            {% if obra_social.requiere_autorizacion %}
+                            Requiere Autorización
+                            {% else %}
+                            No Requiere Autorización
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Acciones rápidas -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="fas fa-bolt mr-2"></i>Acciones Rápidas
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <a href="{{ url_for('obras_sociales.nuevo_plan', obra_social_id=obra_social.id) }}" 
+                           class="btn btn-primary btn-sm">
+                            <i class="fas fa-plus mr-2"></i>Nuevo Plan
+                        </a>
+                        <a href="{{ url_for('obras_sociales.listar_planes', obra_social_id=obra_social.id) }}" 
+                           class="btn btn-info btn-sm">
+                            <i class="fas fa-list mr-2"></i>Gestionar Planes
+                        </a>
+                        <a href="{{ url_for('autorizaciones.listar', obra_social_id=obra_social.id) }}" 
+                           class="btn btn-warning btn-sm">
+                            <i class="fas fa-clipboard-check mr-2"></i>Ver Autorizaciones
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Información del sistema -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="fas fa-cog mr-2"></i>Información del Sistema
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <small class="text-muted">
+                        <p><strong>ID:</strong> {{ obra_social.id }}</p>
+                        <p><strong>Creado:</strong> {{ obra_social.fecha_creacion|date('%d/%m/%Y') }}</p>
+                        <p><strong>Modificado:</strong> {{ obra_social.fecha_modificacion|date('%d/%m/%Y') }}</p>
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Lista de planes (vista previa) -->
+    {% if planes %}
+    <div class="card shadow mb-4">
+        <div class="card-header py-3 d-flex justify-content-between align-items-center">
+            <h6 class="m-0 font-weight-bold text-primary">
+                <i class="fas fa-list mr-2"></i>Planes de Cobertura
+            </h6>
+            <a href="{{ url_for('obras_sociales.listar_planes', obra_social_id=obra_social.id) }}" 
+               class="btn btn-primary btn-sm">
+                Ver Todos los Planes
+            </a>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                {% for plan in planes[:3] %}
+                <div class="col-md-4 mb-3">
+                    <div class="card border-left-primary h-100">
+                        <div class="card-body">
+                            <h6 class="card-title">{{ plan.nombre }}</h6>
+                            <p class="card-text">
+                                <small class="text-muted">Código: {{ plan.codigo }}</small><br>
+                                <span class="badge bg-success">{{ plan.cobertura_display }}</span>
+                                {% if plan.copago > 0 %}
+                                <br><span class="badge bg-warning">{{ plan.copago_display }}</span>
+                                {% endif %}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% if planes|length > 3 %}
+            <div class="text-center mt-3">
+                <a href="{{ url_for('obras_sociales.listar_planes', obra_social_id=obra_social.id) }}" 
+                   class="btn btn-outline-primary">
+                    Ver {{ planes|length - 3 }} Planes Más
+                </a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

@@ -77,6 +77,79 @@
             </div>
         </div>
 
+        <!-- Información de Obra Social -->
+        <div class="card mt-4">
+            <div class="card-header">
+                <h6 class="card-title mb-0">
+                    <i class="fas fa-hospital"></i> Información de Obra Social
+                </h6>
+            </div>
+            <div class="card-body">
+                {% if cliente.obra_social %}
+                    <div class="mb-3">
+                        <small class="text-muted">Obra Social:</small><br>
+                        <span class="badge bg-info">
+                            <i class="fas fa-hospital"></i> {{ cliente.obra_social.nombre }}
+                        </span>
+                        {% if cliente.obra_social.codigo %}
+                            <br><small class="text-muted">Código: {{ cliente.obra_social.codigo }}</small>
+                        {% endif %}
+                    </div>
+                    
+                    {% if cliente.plan %}
+                        <div class="mb-3">
+                            <small class="text-muted">Plan:</small><br>
+                            <strong>{{ cliente.plan.nombre }}</strong>
+                            {% if cliente.plan.porcentaje_cobertura %}
+                                <br><small class="text-muted">Cobertura: {{ cliente.plan.cobertura_display }}</small>
+                            {% endif %}
+                        </div>
+                    {% endif %}
+                    
+                    {% if cliente.numero_afiliado %}
+                        <div class="mb-3">
+                            <small class="text-muted">Número de Afiliado:</small><br>
+                            <strong>{{ cliente.numero_afiliado }}</strong>
+                        </div>
+                    {% endif %}
+                    
+                    {% if cliente.grupo_familiar %}
+                        <div class="mb-3">
+                            <small class="text-muted">Grupo Familiar:</small><br>
+                            <strong>{{ cliente.grupo_familiar }}</strong>
+                        </div>
+                    {% endif %}
+                    
+                    {% if cliente.titular %}
+                        <div class="mb-3">
+                            <small class="text-muted">Titular:</small><br>
+                            <a href="{{ url_for('clientes.detalle', id=cliente.titular.id) }}" class="text-decoration-none">
+                                <i class="fas fa-user-tie"></i> {{ cliente.titular.nombre_completo }}
+                            </a>
+                        </div>
+                    {% endif %}
+                    
+                    {% if cliente.familiares %}
+                        <div class="mb-3">
+                            <small class="text-muted">Familiares:</small><br>
+                            {% for familiar in cliente.familiares %}
+                                <a href="{{ url_for('clientes.detalle', id=familiar.id) }}" class="text-decoration-none">
+                                    <i class="fas fa-user"></i> {{ familiar.nombre_completo }}
+                                </a>
+                                {% if not loop.last %}<br>{% endif %}
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                {% else %}
+                    <div class="text-center py-3">
+                        <i class="fas fa-user fa-2x text-muted mb-2"></i>
+                        <p class="text-muted mb-0">Paciente particular</p>
+                        <small class="text-muted">Sin obra social asignada</small>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
         <!-- Información del registro -->
         <div class="card mt-4">
             <div class="card-header">

@@ -1,0 +1,285 @@
+{% extends "base.html" %}
+
+{% block title %}Obras Sociales - Centro Médico{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3 mb-0 text-gray-800">
+                <i class="fas fa-hospital-user mr-2"></i>Obras Sociales
+            </h1>
+            <p class="text-muted">Gestionar obras sociales, prepagas y planes de cobertura</p>
+        </div>
+        <div>
+            <a href="{{ url_for('obras_sociales.nuevo') }}" class="btn btn-primary">
+                <i class="fas fa-plus mr-2"></i>Nueva Obra Social
+            </a>
+        </div>
+    </div>
+
+    <!-- Filtros -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">Filtros de búsqueda</h6>
+        </div>
+        <div class="card-body">
+            <form method="GET" action="{{ url_for('obras_sociales.listar') }}" class="row g-3">
+                <div class="col-md-4">
+                    <label for="search" class="form-label">Buscar</label>
+                    <input type="text" class="form-control" id="search" name="search" 
+                           value="{{ search }}" placeholder="Nombre, código o CUIT">
+                </div>
+                <div class="col-md-3">
+                    <label for="tipo" class="form-label">Tipo</label>
+                    <select class="form-select" id="tipo" name="tipo">
+                        <option value="">Todos los tipos</option>
+                        {% for tipo_valor, tipo_nombre in tipos_disponibles %}
+                        <option value="{{ tipo_valor }}" {% if tipo == tipo_valor %}selected{% endif %}>
+                            {{ tipo_nombre }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">&nbsp;</label>
+                    <div>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-search mr-2"></i>Buscar
+                        </button>
+                        <a href="{{ url_for('obras_sociales.listar') }}" class="btn btn-secondary">
+                            <i class="fas fa-times mr-2"></i>Limpiar
+                        </a>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Lista de obras sociales -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3 d-flex justify-content-between align-items-center">
+            <h6 class="m-0 font-weight-bold text-primary">Obras Sociales</h6>
+            {% if obras_sociales and obras_sociales.items %}
+            <div>
+                <a href="{{ url_for('obras_sociales.exportar', formato='excel', search=search, tipo=tipo) }}" 
+                   class="btn btn-success btn-sm">
+                    <i class="fas fa-file-excel mr-2"></i>Exportar Excel
+                </a>
+                <a href="{{ url_for('obras_sociales.exportar', formato='csv', search=search, tipo=tipo) }}" 
+                   class="btn btn-info btn-sm">
+                    <i class="fas fa-file-csv mr-2"></i>Exportar CSV
+                </a>
+            </div>
+            {% endif %}
+        </div>
+        <div class="card-body">
+            {% if obras_sociales and obras_sociales.items %}
+            <div class="table-responsive">
+                <table class="table table-bordered table-hover">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Nombre</th>
+                            <th>Código</th>
+                            <th>Tipo</th>
+                            <th>CUIT</th>
+                            <th>Contacto</th>
+                            <th>Cobertura</th>
+                            <th>Autorización</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for obra_social in obras_sociales.items %}
+                        <tr>
+                            <td>
+                                <strong>{{ obra_social.nombre }}</strong>
+                                {% if obra_social.telefono or obra_social.email %}
+                                <br>
+                                <small class="text-muted">
+                                    {% if obra_social.telefono %}
+                                    <i class="fas fa-phone mr-1"></i>{{ obra_social.telefono }}
+                                    {% endif %}
+                                    {% if obra_social.email %}
+                                    <i class="fas fa-envelope mr-1"></i>{{ obra_social.email }}
+                                    {% endif %}
+                                </small>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <span class="badge bg-secondary">{{ obra_social.codigo }}</span>
+                            </td>
+                            <td>
+                                {% if obra_social.tipo == 'obra_social' %}
+                                <span class="badge bg-primary">Obra Social</span>
+                                {% elif obra_social.tipo == 'prepaga' %}
+                                <span class="badge bg-success">Prepaga</span>
+                                {% elif obra_social.tipo == 'particular' %}
+                                <span class="badge bg-warning">Particular</span>
+                                {% else %}
+                                <span class="badge bg-secondary">{{ obra_social.tipo }}</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if obra_social.cuit %}
+                                <code>{{ obra_social.cuit }}</code>
+                                {% else %}
+                                <span class="text-muted">-</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if obra_social.contacto_nombre %}
+                                <strong>{{ obra_social.contacto_nombre }}</strong>
+                                {% if obra_social.contacto_telefono %}
+                                <br><small class="text-muted">{{ obra_social.contacto_telefono }}</small>
+                                {% endif %}
+                                {% else %}
+                                <span class="text-muted">Sin contacto</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <span class="badge {% if obra_social.porcentaje_cobertura > 0 %}bg-success{% else %}bg-secondary{% endif %}">
+                                    {{ obra_social.cobertura_display }}
+                                </span>
+                            </td>
+                            <td>
+                                {% if obra_social.requiere_autorizacion %}
+                                <span class="badge bg-warning">
+                                    <i class="fas fa-clock mr-1"></i>{{ obra_social.dias_autorizacion }} días
+                                </span>
+                                {% else %}
+                                <span class="badge bg-success">No requiere</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="btn-group" role="group">
+                                    <a href="{{ url_for('obras_sociales.detalle', id=obra_social.id) }}" 
+                                       class="btn btn-info btn-sm" title="Ver detalle">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    <a href="{{ url_for('obras_sociales.editar', id=obra_social.id) }}" 
+                                       class="btn btn-warning btn-sm" title="Editar">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    <a href="{{ url_for('obras_sociales.listar_planes', obra_social_id=obra_social.id) }}" 
+                                       class="btn btn-primary btn-sm" title="Ver planes">
+                                        <i class="fas fa-list"></i>
+                                    </a>
+                                    <button type="button" class="btn btn-danger btn-sm" title="Eliminar"
+                                            onclick="confirmarEliminacion({{ obra_social.id }}, '{{ obra_social.nombre }}')">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Paginación -->
+            {% if obras_sociales.pages > 1 %}
+            <nav aria-label="Paginación de obras sociales">
+                <ul class="pagination justify-content-center">
+                    {% if obras_sociales.has_prev %}
+                    <li class="page-item">
+                        <a class="page-link" href="{{ url_for('obras_sociales.listar', page=obras_sociales.prev_num, search=search, tipo=tipo) }}">
+                            <i class="fas fa-chevron-left"></i> Anterior
+                        </a>
+                    </li>
+                    {% endif %}
+                    
+                    {% for page_num in obras_sociales.iter_pages() %}
+                        {% if page_num %}
+                            {% if page_num != obras_sociales.page %}
+                            <li class="page-item">
+                                <a class="page-link" href="{{ url_for('obras_sociales.listar', page=page_num, search=search, tipo=tipo) }}">
+                                    {{ page_num }}
+                                </a>
+                            </li>
+                            {% else %}
+                            <li class="page-item active">
+                                <span class="page-link">{{ page_num }}</span>
+                            </li>
+                            {% endif %}
+                        {% else %}
+                        <li class="page-item disabled">
+                            <span class="page-link">...</span>
+                        </li>
+                        {% endif %}
+                    {% endfor %}
+                    
+                    {% if obras_sociales.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="{{ url_for('obras_sociales.listar', page=obras_sociales.next_num, search=search, tipo=tipo) }}">
+                            Siguiente <i class="fas fa-chevron-right"></i>
+                        </a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+            {% endif %}
+
+            <!-- Información de paginación -->
+            <div class="text-center text-muted">
+                Mostrando {{ obras_sociales.items|length }} de {{ obras_sociales.total }} obras sociales
+            </div>
+
+            {% else %}
+            <div class="text-center py-5">
+                <i class="fas fa-hospital-user fa-3x text-muted mb-3"></i>
+                <h5 class="text-muted">No se encontraron obras sociales</h5>
+                <p class="text-muted">
+                    {% if search or tipo %}
+                    Intenta ajustar los filtros de búsqueda
+                    {% else %}
+                    Comienza creando la primera obra social
+                    {% endif %}
+                </p>
+                {% if not search and not tipo %}
+                <a href="{{ url_for('obras_sociales.nuevo') }}" class="btn btn-primary">
+                    <i class="fas fa-plus mr-2"></i>Crear Primera Obra Social
+                </a>
+                {% endif %}
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Modal de confirmación de eliminación -->
+<div class="modal fade" id="modalEliminar" tabindex="-1" aria-labelledby="modalEliminarLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalEliminarLabel">Confirmar eliminación</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>¿Estás seguro de que quieres eliminar la obra social <strong id="nombreObraSocial"></strong>?</p>
+                <p class="text-warning">
+                    <i class="fas fa-exclamation-triangle mr-2"></i>
+                    Esta acción no se puede deshacer.
+                </p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <form id="formEliminar" method="POST" style="display: inline;">
+                    <button type="submit" class="btn btn-danger">Eliminar</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function confirmarEliminacion(id, nombre) {
+    document.getElementById('nombreObraSocial').textContent = nombre;
+    document.getElementById('formEliminar').action = `/obras-sociales/${id}/eliminar`;
+    
+    const modal = new bootstrap.Modal(document.getElementById('modalEliminar'));
+    modal.show();
+}
+</script>
+{% endblock %}

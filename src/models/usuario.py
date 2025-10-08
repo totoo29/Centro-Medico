@@ -5,6 +5,7 @@ from src.database import db
 
 class Usuario(UserMixin, db.Model):
     __tablename__ = 'usuarios'
+    __table_args__ = {'extend_existing': True}
     
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(80), unique=True, nullable=False)

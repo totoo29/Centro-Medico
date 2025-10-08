@@ -1,0 +1,270 @@
+{% extends "base.html" %}
+
+{% block title %}Planes de {{ obra_social.nombre }} - Centro Médico{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3 mb-0 text-gray-800">
+                <i class="fas fa-list mr-2"></i>Planes de {{ obra_social.nombre }}
+            </h1>
+            <p class="text-muted">
+                Gestionar planes de cobertura para 
+                <span class="badge {% if obra_social.tipo == 'obra_social' %}bg-primary{% elif obra_social.tipo == 'prepaga' %}bg-success{% elif obra_social.tipo == 'particular' %}bg-warning{% else %}bg-secondary{% endif %}">
+                    {{ obra_social.tipo_display }}
+                </span>
+                <span class="badge bg-secondary ms-2">{{ obra_social.codigo }}</span>
+            </p>
+        </div>
+        <div>
+            <a href="{{ url_for('obras_sociales.detalle', id=obra_social.id) }}" class="btn btn-secondary me-2">
+                <i class="fas fa-arrow-left mr-2"></i>Volver
+            </a>
+            <a href="{{ url_for('obras_sociales.nuevo_plan', obra_social_id=obra_social.id) }}" class="btn btn-primary">
+                <i class="fas fa-plus mr-2"></i>Nuevo Plan
+            </a>
+        </div>
+    </div>
+
+    <!-- Filtros -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">Filtros de búsqueda</h6>
+        </div>
+        <div class="card-body">
+            <form method="GET" action="{{ url_for('obras_sociales.listar_planes', obra_social_id=obra_social.id) }}" class="row g-3">
+                <div class="col-md-6">
+                    <label for="search" class="form-label">Buscar</label>
+                    <input type="text" class="form-control" id="search" name="search" 
+                           value="{{ search }}" placeholder="Nombre o código del plan">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">&nbsp;</label>
+                    <div>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-search mr-2"></i>Buscar
+                        </button>
+                        <a href="{{ url_for('obras_sociales.listar_planes', obra_social_id=obra_social.id) }}" class="btn btn-secondary">
+                            <i class="fas fa-times mr-2"></i>Limpiar
+                        </a>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Lista de planes -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3 d-flex justify-content-between align-items-center">
+            <h6 class="m-0 font-weight-bold text-primary">Planes de Cobertura</h6>
+            {% if planes and planes.items %}
+            <div>
+                <a href="{{ url_for('obras_sociales.exportar', formato='excel', search=search, obra_social_id=obra_social.id) }}" 
+                   class="btn btn-success btn-sm">
+                    <i class="fas fa-file-excel mr-2"></i>Exportar Excel
+                </a>
+                <a href="{{ url_for('obras_sociales.exportar', formato='csv', search=search, obra_social_id=obra_social.id) }}" 
+                   class="btn btn-info btn-sm">
+                    <i class="fas fa-file-csv mr-2"></i>Exportar CSV
+                </a>
+            </div>
+            {% endif %}
+        </div>
+        <div class="card-body">
+            {% if planes and planes.items %}
+            <div class="table-responsive">
+                <table class="table table-bordered table-hover">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Nombre</th>
+                            <th>Código</th>
+                            <th>Cobertura</th>
+                            <th>Copago</th>
+                            <th>Coseguro</th>
+                            <th>Límites</th>
+                            <th>Autorización</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for plan in planes.items %}
+                        <tr>
+                            <td>
+                                <strong>{{ plan.nombre }}</strong>
+                                {% if plan.especialidades_cubiertas %}
+                                <br>
+                                <small class="text-muted">
+                                    <i class="fas fa-stethoscope mr-1"></i>
+                                    Especialidades cubiertas
+                                </small>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <span class="badge bg-secondary">{{ plan.codigo }}</span>
+                            </td>
+                            <td>
+                                <span class="badge {% if plan.porcentaje_cobertura > 0 %}bg-success{% else %}bg-secondary{% endif %}">
+                                    {{ plan.cobertura_display }}
+                                </span>
+                            </td>
+                            <td>
+                                <span class="badge {% if plan.copago > 0 %}bg-warning{% else %}bg-success{% endif %}">
+                                    {{ plan.copago_display }}
+                                </span>
+                            </td>
+                            <td>
+                                <span class="badge {% if plan.coseguro > 0 %}bg-info{% else %}bg-success{% endif %}">
+                                    {{ plan.coseguro_display }}
+                                </span>
+                            </td>
+                            <td>
+                                {% if plan.limite_anual or plan.limite_por_consulta %}
+                                <small>
+                                    {% if plan.limite_anual %}
+                                    <div><strong>Anual:</strong> ${{ "%.2f"|format(plan.limite_anual) }}</div>
+                                    {% endif %}
+                                    {% if plan.limite_por_consulta %}
+                                    <div><strong>Por consulta:</strong> ${{ "%.2f"|format(plan.limite_por_consulta) }}</div>
+                                    {% endif %}
+                                </small>
+                                {% else %}
+                                <span class="text-muted">Sin límites</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if plan.requiere_autorizacion %}
+                                <span class="badge bg-warning">
+                                    <i class="fas fa-clock mr-1"></i>{{ plan.dias_autorizacion }} días
+                                </span>
+                                {% else %}
+                                <span class="badge bg-success">No requiere</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="btn-group" role="group">
+                                    <a href="{{ url_for('obras_sociales.editar_plan', obra_social_id=obra_social.id, plan_id=plan.id) }}" 
+                                       class="btn btn-warning btn-sm" title="Editar">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    <button type="button" class="btn btn-danger btn-sm" title="Eliminar"
+                                            onclick="confirmarEliminacionPlan({{ plan.id }}, '{{ plan.nombre }}')">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Paginación -->
+            {% if planes.pages > 1 %}
+            <nav aria-label="Paginación de planes">
+                <ul class="pagination justify-content-center">
+                    {% if planes.has_prev %}
+                    <li class="page-item">
+                        <a class="page-link" href="{{ url_for('obras_sociales.listar_planes', obra_social_id=obra_social.id, page=planes.prev_num, search=search) }}">
+                            <i class="fas fa-chevron-left"></i> Anterior
+                        </a>
+                    </li>
+                    {% endif %}
+                    
+                    {% for page_num in planes.iter_pages() %}
+                        {% if page_num %}
+                            {% if page_num != planes.page %}
+                            <li class="page-item">
+                                <a class="page-link" href="{{ url_for('obras_sociales.listar_planes', obra_social_id=obra_social.id, page=page_num, search=search) }}">
+                                    {{ page_num }}
+                                </a>
+                            </li>
+                            {% else %}
+                            <li class="page-item active">
+                                <span class="page-link">{{ page_num }}</span>
+                            </li>
+                            {% endif %}
+                        {% else %}
+                        <li class="page-item disabled">
+                            <span class="page-link">...</span>
+                        </li>
+                        {% endif %}
+                    {% endfor %}
+                    
+                    {% if planes.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="{{ url_for('obras_sociales.listar_planes', obra_social_id=obra_social.id, page=planes.next_num, search=search) }}">
+                            Siguiente <i class="fas fa-chevron-right"></i>
+                        </a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+            {% endif %}
+
+            <!-- Información de paginación -->
+            <div class="text-center text-muted">
+                Mostrando {{ planes.items|length }} de {{ planes.total }} planes
+            </div>
+
+            {% else %}
+            <div class="text-center py-5">
+                <i class="fas fa-list fa-3x text-muted mb-3"></i>
+                <h5 class="text-muted">No se encontraron planes</h5>
+                <p class="text-muted">
+                    {% if search %}
+                    Intenta ajustar los filtros de búsqueda
+                    {% else %}
+                    Comienza creando el primer plan para esta obra social
+                    {% endif %}
+                </p>
+                {% if not search %}
+                <a href="{{ url_for('obras_sociales.nuevo_plan', obra_social_id=obra_social.id) }}" class="btn btn-primary">
+                    <i class="fas fa-plus mr-2"></i>Crear Primer Plan
+                </a>
+                {% endif %}
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Modal de confirmación de eliminación de plan -->
+<div class="modal fade" id="modalEliminarPlan" tabindex="-1" aria-labelledby="modalEliminarPlanLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalEliminarPlanLabel">Confirmar eliminación</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>¿Estás seguro de que quieres eliminar el plan <strong id="nombrePlan"></strong>?</p>
+                <p class="text-warning">
+                    <i class="fas fa-exclamation-triangle mr-2"></i>
+                    Esta acción no se puede deshacer.
+                </p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <form id="formEliminarPlan" method="POST" style="display: inline;">
+                    <button type="submit" class="btn btn-danger">Eliminar</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function confirmarEliminacionPlan(id, nombre) {
+    document.getElementById('nombrePlan').textContent = nombre;
+    // Construir la URL correctamente
+    const baseUrl = "{{ url_for('obras_sociales.eliminar_plan', obra_social_id=obra_social.id, plan_id=0) }}";
+    const actionUrl = baseUrl.replace('/0/', '/' + id + '/');
+    document.getElementById('formEliminarPlan').action = actionUrl;
+    
+    const modal = new bootstrap.Modal(document.getElementById('modalEliminarPlan'));
+    modal.show();
+}
+</script>
+{% endblock %}

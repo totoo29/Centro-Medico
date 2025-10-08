@@ -1,0 +1,258 @@
+{% extends "base.html" %}
+
+{% block title %}
+{% if plan %}Editar Plan{% else %}Nuevo Plan{% endif %} - {{ obra_social.nombre }}
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3 mb-0 text-gray-800">
+                <i class="fas fa-list mr-2"></i>
+                {% if plan %}Editar Plan{% else %}Nuevo Plan{% endif %}
+            </h1>
+            <p class="text-muted">
+                {% if plan %}
+                Modificar plan de cobertura
+                {% else %}
+                Crear nuevo plan para {{ obra_social.nombre }}
+                {% endif %}
+            </p>
+            <p class="mb-0">
+                <span class="badge {% if obra_social.tipo == 'obra_social' %}bg-primary{% elif obra_social.tipo == 'prepaga' %}bg-success{% elif obra_social.tipo == 'particular' %}bg-warning{% else %}bg-secondary{% endif %}">
+                    {{ obra_social.tipo_display }}
+                </span>
+                <span class="badge bg-secondary ms-2">{{ obra_social.codigo }}</span>
+            </p>
+        </div>
+        <div>
+            <a href="{{ url_for('obras_sociales.listar_planes', obra_social_id=obra_social.id) }}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left mr-2"></i>Volver
+            </a>
+        </div>
+    </div>
+
+    <!-- Formulario -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">
+                {% if plan %}Información del Plan{% else %}Datos del Nuevo Plan{% endif %}
+            </h6>
+        </div>
+        <div class="card-body">
+            <form id="formPlan" method="POST" 
+                  action="{% if plan %}{{ url_for('obras_sociales.actualizar_plan', obra_social_id=obra_social.id, plan_id=plan.id) }}{% else %}{{ url_for('obras_sociales.crear_plan', obra_social_id=obra_social.id) }}{% endif %}">
+                
+                <!-- Información básica -->
+                <div class="row mb-4">
+                    <div class="col-12">
+                        <h6 class="text-primary mb-3">
+                            <i class="fas fa-info-circle mr-2"></i>Información Básica
+                        </h6>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="nombre" class="form-label">Nombre del Plan *</label>
+                        <input type="text" class="form-control" id="nombre" name="nombre" 
+                               value="{{ plan.nombre if plan else '' }}" 
+                               required placeholder="Nombre del plan de cobertura">
+                        <div class="invalid-feedback">El nombre es obligatorio</div>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="codigo" class="form-label">Código del Plan *</label>
+                        <input type="text" class="form-control" id="codigo" name="codigo" 
+                               value="{{ plan.codigo if plan else '' }}" 
+                               required placeholder="Código único del plan">
+                        <div class="invalid-feedback">El código es obligatorio</div>
+                    </div>
+                </div>
+
+                <!-- Información de cobertura -->
+                <div class="row mb-4">
+                    <div class="col-12">
+                        <h6 class="text-primary mb-3">
+                            <i class="fas fa-shield-alt mr-2"></i>Información de Cobertura
+                        </h6>
+                    </div>
+                    <div class="col-md-4">
+                        <label for="porcentaje_cobertura" class="form-label">Porcentaje de Cobertura *</label>
+                        <div class="input-group">
+                            <input type="number" class="form-control" id="porcentaje_cobertura" name="porcentaje_cobertura" 
+                                   value="{{ plan.porcentaje_cobertura if plan else 0 }}" 
+                                   min="0" max="100" step="1" required>
+                            <span class="input-group-text">%</span>
+                        </div>
+                        <div class="invalid-feedback">El porcentaje de cobertura es obligatorio</div>
+                    </div>
+                    <div class="col-md-4">
+                        <label for="copago" class="form-label">Copago</label>
+                        <div class="input-group">
+                            <span class="input-group-text">$</span>
+                            <input type="number" class="form-control" id="copago" name="copago" 
+                                   value="{{ plan.copago if plan else 0 }}" 
+                                   min="0" step="0.01">
+                        </div>
+                        <small class="form-text text-muted">Monto fijo que paga el paciente</small>
+                    </div>
+                    <div class="col-md-4">
+                        <label for="coseguro" class="form-label">Coseguro</label>
+                        <div class="input-group">
+                            <input type="number" class="form-control" id="coseguro" name="coseguro" 
+                                   value="{{ plan.coseguro if plan else 0 }}" 
+                                   min="0" max="100" step="1">
+                            <span class="input-group-text">%</span>
+                        </div>
+                        <small class="form-text text-muted">Porcentaje que paga el paciente sobre lo cubierto</small>
+                    </div>
+                </div>
+
+                <!-- Límites del plan -->
+                <div class="row mb-4">
+                    <div class="col-12">
+                        <h6 class="text-primary mb-3">
+                            <i class="fas fa-chart-line mr-2"></i>Límites del Plan
+                        </h6>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="limite_anual" class="form-label">Límite Anual</label>
+                        <div class="input-group">
+                            <span class="input-group-text">$</span>
+                            <input type="number" class="form-control" id="limite_anual" name="limite_anual" 
+                                   value="{{ plan.limite_anual if plan else '' }}" 
+                                   min="0" step="0.01" placeholder="Sin límite">
+                        </div>
+                        <small class="form-text text-muted">Límite anual de cobertura (opcional)</small>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="limite_por_consulta" class="form-label">Límite por Consulta</label>
+                        <div class="input-group">
+                            <span class="input-group-text">$</span>
+                            <input type="number" class="form-control" id="limite_por_consulta" name="limite_por_consulta" 
+                                   value="{{ plan.limite_por_consulta if plan else '' }}" 
+                                   min="0" step="0.01" placeholder="Sin límite">
+                        </div>
+                        <small class="form-text text-muted">Límite por consulta/procedimiento (opcional)</small>
+                    </div>
+                </div>
+
+                <!-- Requisitos de autorización -->
+                <div class="row mb-4">
+                    <div class="col-12">
+                        <h6 class="text-primary mb-3">
+                            <i class="fas fa-clipboard-check mr-2"></i>Requisitos de Autorización
+                        </h6>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="requiere_autorizacion" class="form-label">Requiere Autorización</label>
+                        <div class="form-check form-switch mt-2">
+                            <input class="form-check-input" type="checkbox" id="requiere_autorizacion" name="requiere_autorizacion" value="1"
+                                   {% if plan and plan.requiere_autorizacion %}checked{% endif %}>
+                            <label class="form-check-label" for="requiere_autorizacion">
+                                Este plan requiere autorización previa
+                            </label>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="dias_autorizacion" class="form-label">Días de Anticipación</label>
+                        <input type="number" class="form-control" id="dias_autorizacion" name="dias_autorizacion" 
+                               value="{{ plan.dias_autorizacion if plan else 0 }}" 
+                               min="0" max="365" step="1">
+                        <small class="form-text text-muted">Días de anticipación para solicitar autorización</small>
+                    </div>
+                </div>
+
+                <!-- Especialidades cubiertas -->
+                <div class="row mb-4">
+                    <div class="col-12">
+                        <label for="especialidades_cubiertas" class="form-label">Especialidades Cubiertas</label>
+                        <textarea class="form-control" id="especialidades_cubiertas" name="especialidades_cubiertas" rows="3" 
+                                  placeholder="Lista de especialidades cubiertas por este plan (opcional)">{{ plan.especialidades_cubiertas if plan else '' }}</textarea>
+                        <small class="form-text text-muted">Puedes listar las especialidades médicas cubiertas por este plan</small>
+                    </div>
+                </div>
+
+                <!-- Notas adicionales -->
+                <div class="row mb-4">
+                    <div class="col-12">
+                        <label for="notas" class="form-label">Notas Adicionales</label>
+                        <textarea class="form-control" id="notas" name="notas" rows="3" 
+                                  placeholder="Información adicional, observaciones, restricciones, etc.">{{ plan.notas if plan else '' }}</textarea>
+                    </div>
+                </div>
+
+                <!-- Botones de acción -->
+                <div class="row">
+                    <div class="col-12 text-end">
+                        <a href="{{ url_for('obras_sociales.listar_planes', obra_social_id=obra_social.id) }}" class="btn btn-secondary me-2">
+                            <i class="fas fa-times mr-2"></i>Cancelar
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save mr-2"></i>
+                            {% if plan %}Actualizar{% else %}Crear{% endif %} Plan
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('formPlan');
+    
+    // Validación del formulario
+    form.addEventListener('submit', function(event) {
+        if (!form.checkValidity()) {
+            event.preventDefault();
+            event.stopPropagation();
+        }
+        
+        form.classList.add('was-validated');
+    });
+    
+    // Validación en tiempo real del código
+    const codigoInput = document.getElementById('codigo');
+    codigoInput.addEventListener('input', function() {
+        this.value = this.value.toUpperCase();
+    });
+    
+    // Mostrar/ocultar campos de autorización según el checkbox
+    const requiereAuthCheckbox = document.getElementById('requiere_autorizacion');
+    const diasAuthInput = document.getElementById('dias_autorizacion');
+    
+    function toggleDiasAutorizacion() {
+        if (requiereAuthCheckbox.checked) {
+            diasAuthInput.disabled = false;
+            diasAuthInput.required = true;
+        } else {
+            diasAuthInput.disabled = true;
+            diasAuthInput.required = false;
+            diasAuthInput.value = 0;
+        }
+    }
+    
+    requiereAuthCheckbox.addEventListener('change', toggleDiasAutorizacion);
+    toggleDiasAutorizacion(); // Ejecutar al cargar la página
+    
+    // Validación de límites
+    const limiteAnualInput = document.getElementById('limite_anual');
+    const limitePorConsultaInput = document.getElementById('limite_por_consulta');
+    
+    function validarLimites() {
+        const limiteAnual = parseFloat(limiteAnualInput.value) || 0;
+        const limitePorConsulta = parseFloat(limitePorConsultaInput.value) || 0;
+        
+        if (limiteAnual > 0 && limitePorConsulta > 0 && limitePorConsulta > limiteAnual) {
+            limitePorConsultaInput.setCustomValidity('El límite por consulta no puede ser mayor al límite anual');
+        } else {
+            limitePorConsultaInput.setCustomValidity('');
+        }
+    }
+    
+    limiteAnualInput.addEventListener('input', validarLimites);
+    limitePorConsultaInput.addEventListener('input', validarLimites);
+});
+</script>
+{% endblock %}

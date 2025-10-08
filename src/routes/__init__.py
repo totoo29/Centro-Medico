@@ -98,6 +98,32 @@ def register_blueprints(app):
     except Exception as e:
         print(f"❌ Error inesperado con blueprint 'turnos': {e}")
     
+    # ========================================
+    # BLUEPRINT DE OBRAS SOCIALES
+    # ========================================
+    try:
+        from .obras_sociales import obras_sociales_bp
+        app.register_blueprint(obras_sociales_bp, url_prefix='/obras-sociales')
+        print("✅ Blueprint 'obras_sociales' registrado correctamente")
+    except ImportError as e:
+        print(f"⚠️ Error al registrar blueprint 'obras_sociales': {e}")
+        print("   Asegúrate de que existe el archivo: src/routes/obras_sociales.py")
+    except Exception as e:
+        print(f"❌ Error inesperado con blueprint 'obras_sociales': {e}")
+    
+    # ========================================
+    # BLUEPRINT DE AUTORIZACIONES
+    # ========================================
+    try:
+        from .autorizaciones import autorizaciones_bp
+        app.register_blueprint(autorizaciones_bp, url_prefix='/autorizaciones')
+        print("✅ Blueprint 'autorizaciones' registrado correctamente")
+    except ImportError as e:
+        print(f"⚠️ Error al registrar blueprint 'autorizaciones': {e}")
+        print("   Asegúrate de que existe el archivo: src/routes/autorizaciones.py")
+    except Exception as e:
+        print(f"❌ Error inesperado con blueprint 'autorizaciones': {e}")
+    
     print("🎯 Registro de blueprints completado")
 
 

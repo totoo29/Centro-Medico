@@ -3,6 +3,7 @@ from src.database import db
 
 class Turno(db.Model):
     __tablename__ = 'turnos'
+    __table_args__ = {'extend_existing': True}
     
     id = db.Column(db.Integer, primary_key=True)
     fecha = db.Column(db.Date, nullable=False)

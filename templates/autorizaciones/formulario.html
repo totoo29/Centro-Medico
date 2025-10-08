@@ -1,0 +1,300 @@
+{% extends "base.html" %}
+
+{% block title %}
+    {% if autorizacion %}Editar Autorización{% else %}Nueva Autorización{% endif %} - Consultorio Médico
+{% endblock %}
+
+{% block page_title %}
+    {% if autorizacion %}Editar Autorización{% else %}Nueva Autorización{% endif %}
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-10">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-clipboard-check"></i>
+                    {% if autorizacion %}Editar Autorización{% else %}Crear Nueva Autorización{% endif %}
+                </h5>
+            </div>
+            <div class="card-body">
+                <form id="autorizacionForm" method="POST" action="{{ url_for('autorizaciones.crear') if not autorizacion else url_for('autorizaciones.actualizar', id=autorizacion.id) }}">
+                    <!-- Información básica -->
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <h6 class="text-primary border-bottom pb-2">
+                                <i class="fas fa-info-circle"></i> Información Básica
+                            </h6>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <label for="numero_autorizacion" class="form-label">Número de Autorización *</label>
+                            <input type="text" class="form-control" id="numero_autorizacion" name="numero_autorizacion" 
+                                   value="{{ autorizacion.numero_autorizacion if autorizacion else '' }}" required>
+                            <div class="form-text">Número único de autorización otorgado por la obra social</div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <label for="cliente_id" class="form-label">Cliente *</label>
+                            <select class="form-select" id="cliente_id" name="cliente_id" required>
+                                <option value="">Seleccionar cliente...</option>
+                                {% for cliente in clientes %}
+                                    <option value="{{ cliente.id }}" 
+                                            {% if autorizacion and autorizacion.cliente_id == cliente.id %}selected{% endif %}>
+                                        {{ cliente.nombre }} {{ cliente.apellido }} - {{ cliente.dni }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Obra Social y Plan -->
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <h6 class="text-primary border-bottom pb-2">
+                                <i class="fas fa-shield-alt"></i> Cobertura
+                            </h6>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <label for="obra_social_id" class="form-label">Obra Social *</label>
+                            <select class="form-select" id="obra_social_id" name="obra_social_id" required>
+                                <option value="">Seleccionar obra social...</option>
+                                {% for obra_social in obras_sociales %}
+                                    <option value="{{ obra_social.id }}" 
+                                            {% if autorizacion and autorizacion.obra_social_id == obra_social.id %}selected{% endif %}>
+                                        {{ obra_social.nombre }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <label for="plan_id" class="form-label">Plan</label>
+                            <select class="form-select" id="plan_id" name="plan_id">
+                                <option value="">Seleccionar plan...</option>
+                                {% for plan in planes %}
+                                    <option value="{{ plan.id }}" 
+                                            {% if autorizacion and autorizacion.plan_id == plan.id %}selected{% endif %}>
+                                        {{ plan.nombre }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Servicio y Profesional -->
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <h6 class="text-primary border-bottom pb-2">
+                                <i class="fas fa-stethoscope"></i> Servicio y Profesional
+                            </h6>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <label for="servicio_id" class="form-label">Servicio</label>
+                            <select class="form-select" id="servicio_id" name="servicio_id">
+                                <option value="">Seleccionar servicio...</option>
+                                {% for servicio in servicios %}
+                                    <option value="{{ servicio.id }}" 
+                                            {% if autorizacion and autorizacion.servicio_id == servicio.id %}selected{% endif %}>
+                                        {{ servicio.nombre }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <label for="profesional_id" class="form-label">Profesional</label>
+                            <select class="form-select" id="profesional_id" name="profesional_id">
+                                <option value="">Seleccionar profesional...</option>
+                                {% for profesional in profesionales %}
+                                    <option value="{{ profesional.id }}" 
+                                            {% if autorizacion and autorizacion.profesional_id == profesional.id %}selected{% endif %}>
+                                        {{ profesional.nombre }} {{ profesional.apellido }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Fechas -->
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <h6 class="text-primary border-bottom pb-2">
+                                <i class="fas fa-calendar-alt"></i> Fechas
+                            </h6>
+                        </div>
+                        
+                        <div class="col-md-4">
+                            <label for="fecha_solicitud" class="form-label">Fecha de Solicitud</label>
+                            <input type="datetime-local" class="form-control" id="fecha_solicitud" name="fecha_solicitud" 
+                                   value="{{ autorizacion.fecha_solicitud.strftime('%Y-%m-%dT%H:%M') if autorizacion and autorizacion.fecha_solicitud else '' }}">
+                        </div>
+                        
+                        <div class="col-md-4">
+                            <label for="fecha_autorizacion" class="form-label">Fecha de Autorización</label>
+                            <input type="datetime-local" class="form-control" id="fecha_autorizacion" name="fecha_autorizacion" 
+                                   value="{{ autorizacion.fecha_autorizacion.strftime('%Y-%m-%dT%H:%M') if autorizacion and autorizacion.fecha_autorizacion else '' }}">
+                        </div>
+                        
+                        <div class="col-md-4">
+                            <label for="fecha_vencimiento" class="form-label">Fecha de Vencimiento</label>
+                            <input type="datetime-local" class="form-control" id="fecha_vencimiento" name="fecha_vencimiento" 
+                                   value="{{ autorizacion.fecha_vencimiento.strftime('%Y-%m-%dT%H:%M') if autorizacion and autorizacion.fecha_vencimiento else '' }}">
+                        </div>
+                    </div>
+
+                    <!-- Estado y Cobertura -->
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <h6 class="text-primary border-bottom pb-2">
+                                <i class="fas fa-chart-pie"></i> Estado y Cobertura
+                            </h6>
+                        </div>
+                        
+                        <div class="col-md-3">
+                            <label for="estado" class="form-label">Estado *</label>
+                            <select class="form-select" id="estado" name="estado" required>
+                                <option value="pendiente" {% if autorizacion and autorizacion.estado == 'pendiente' %}selected{% endif %}>Pendiente</option>
+                                <option value="aprobada" {% if autorizacion and autorizacion.estado == 'aprobada' %}selected{% endif %}>Aprobada</option>
+                                <option value="rechazada" {% if autorizacion and autorizacion.estado == 'rechazada' %}selected{% endif %}>Rechazada</option>
+                                <option value="vencida" {% if autorizacion and autorizacion.estado == 'vencida' %}selected{% endif %}>Vencida</option>
+                            </select>
+                        </div>
+                        
+                        <div class="col-md-3">
+                            <label for="porcentaje_cobertura" class="form-label">% Cobertura</label>
+                            <input type="number" class="form-control" id="porcentaje_cobertura" name="porcentaje_cobertura" 
+                                   min="0" max="100" step="0.01"
+                                   value="{{ autorizacion.porcentaje_cobertura if autorizacion else '' }}">
+                        </div>
+                        
+                        <div class="col-md-3">
+                            <label for="copago" class="form-label">Copago</label>
+                            <input type="number" class="form-control" id="copago" name="copago" 
+                                   min="0" step="0.01"
+                                   value="{{ autorizacion.copago if autorizacion else '' }}">
+                        </div>
+                        
+                        <div class="col-md-3">
+                            <label for="coseguro" class="form-label">Coseguro</label>
+                            <input type="number" class="form-control" id="coseguro" name="coseguro" 
+                                   min="0" step="0.01"
+                                   value="{{ autorizacion.coseguro if autorizacion else '' }}">
+                        </div>
+                    </div>
+
+                    <!-- Información adicional -->
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <h6 class="text-primary border-bottom pb-2">
+                                <i class="fas fa-plus-circle"></i> Información Adicional
+                            </h6>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <label for="limite_autorizacion" class="form-label">Límite de Autorización</label>
+                            <input type="number" class="form-control" id="limite_autorizacion" name="limite_autorizacion" 
+                                   min="0" step="0.01"
+                                   value="{{ autorizacion.limite_autorizacion if autorizacion else '' }}">
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <label for="cantidad_autorizada" class="form-label">Cantidad Autorizada</label>
+                            <input type="number" class="form-control" id="cantidad_autorizada" name="cantidad_autorizada" 
+                                   min="1" value="{{ autorizacion.cantidad_autorizada if autorizacion else 1 }}">
+                        </div>
+                        
+                        <div class="col-12">
+                            <label for="observaciones" class="form-label">Observaciones</label>
+                            <textarea class="form-control" id="observaciones" name="observaciones" rows="3">{{ autorizacion.observaciones if autorizacion else '' }}</textarea>
+                        </div>
+                    </div>
+
+                    <!-- Motivo de rechazo (solo si está rechazada) -->
+                    <div class="row mb-4" id="motivo_rechazo_group" style="display: none;">
+                        <div class="col-12">
+                            <label for="motivo_rechazo" class="form-label">Motivo del Rechazo</label>
+                            <textarea class="form-control" id="motivo_rechazo" name="motivo_rechazo" rows="3">{{ autorizacion.motivo_rechazo if autorizacion else '' }}</textarea>
+                        </div>
+                    </div>
+
+                    <!-- Botones de acción -->
+                    <div class="row">
+                        <div class="col-12 text-end">
+                            <a href="{{ url_for('autorizaciones.listar') }}" class="btn btn-secondary me-2">
+                                <i class="fas fa-times"></i> Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i>
+                                {% if autorizacion %}Actualizar{% else %}Crear{% endif %} Autorización
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Mostrar/ocultar motivo de rechazo según el estado
+    const estadoSelect = document.getElementById('estado');
+    const motivoRechazoGroup = document.getElementById('motivo_rechazo_group');
+    
+    function toggleMotivoRechazo() {
+        if (estadoSelect.value === 'rechazada') {
+            motivoRechazoGroup.style.display = 'block';
+            document.getElementById('motivo_rechazo').required = true;
+        } else {
+            motivoRechazoGroup.style.display = 'none';
+            document.getElementById('motivo_rechazo').required = false;
+        }
+    }
+    
+    estadoSelect.addEventListener('change', toggleMotivoRechazo);
+    toggleMotivoRechazo(); // Ejecutar al cargar la página
+    
+    // Validación del formulario
+    document.getElementById('autorizacionForm').addEventListener('submit', function(e) {
+        const numeroAutorizacion = document.getElementById('numero_autorizacion').value.trim();
+        const clienteId = document.getElementById('cliente_id').value;
+        const obraSocialId = document.getElementById('obra_social_id').value;
+        
+        if (!numeroAutorizacion) {
+            e.preventDefault();
+            alert('El número de autorización es obligatorio');
+            return false;
+        }
+        
+        if (!clienteId) {
+            e.preventDefault();
+            alert('Debe seleccionar un cliente');
+            return false;
+        }
+        
+        if (!obraSocialId) {
+            e.preventDefault();
+            alert('Debe seleccionar una obra social');
+            return false;
+        }
+        
+        // Validar que el número de autorización sea único (esto se validará en el backend)
+        return true;
+    });
+    
+    // Generar número de autorización automáticamente si está vacío
+    const numeroAutorizacionInput = document.getElementById('numero_autorizacion');
+    if (!numeroAutorizacionInput.value) {
+        const fecha = new Date();
+        const timestamp = fecha.getTime();
+        numeroAutorizacionInput.value = `AUT-${timestamp}`;
+    }
+});
+</script>
+{% endblock %}

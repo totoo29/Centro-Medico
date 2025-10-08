@@ -78,6 +78,7 @@
                         <tr>
                             <th>ID</th>
                             <th>Nombre Completo</th>
+                            <th>Obra Social</th>
                             <th>Teléfono</th>
                             <th>Email</th>
                             <th>Fecha Registro</th>
@@ -99,6 +100,20 @@
                                         <strong>{{ cliente.nombre }} {{ cliente.apellido }}</strong>
                                     </div>
                                 </div>
+                            </td>
+                            <td>
+                                {% if cliente.obra_social %}
+                                    <span class="badge bg-info">
+                                        <i class="fas fa-hospital"></i> {{ cliente.obra_social.nombre }}
+                                    </span>
+                                    {% if cliente.plan %}
+                                        <br><small class="text-muted">{{ cliente.plan.nombre }}</small>
+                                    {% endif %}
+                                {% else %}
+                                    <span class="badge bg-secondary">
+                                        <i class="fas fa-user"></i> Particular
+                                    </span>
+                                {% endif %}
                             </td>
                             <td>
                                 {% if cliente.telefono %}

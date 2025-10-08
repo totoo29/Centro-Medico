@@ -1,0 +1,243 @@
+{% extends "base.html" %}
+
+{% block title %}
+{% if obra_social %}Editar Obra Social{% else %}Nueva Obra Social{% endif %} - Centro Médico
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3 mb-0 text-gray-800">
+                <i class="fas fa-hospital-user mr-2"></i>
+                {% if obra_social %}Editar Obra Social{% else %}Nueva Obra Social{% endif %}
+            </h1>
+            <p class="text-muted">
+                {% if obra_social %}
+                Modificar información de la obra social
+                {% else %}
+                Crear una nueva obra social, prepaga o plan particular
+                {% endif %}
+            </p>
+        </div>
+        <div>
+            <a href="{{ url_for('obras_sociales.listar') }}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left mr-2"></i>Volver
+            </a>
+        </div>
+    </div>
+
+    <!-- Formulario -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">
+                {% if obra_social %}Información de la Obra Social{% else %}Datos de la Nueva Obra Social{% endif %}
+            </h6>
+        </div>
+        <div class="card-body">
+            <form id="formObraSocial" method="POST" 
+                  action="{% if obra_social %}{{ url_for('obras_sociales.actualizar', id=obra_social.id) }}{% else %}{{ url_for('obras_sociales.crear') }}{% endif %}">
+                
+                <!-- Información básica -->
+                <div class="row mb-4">
+                    <div class="col-12">
+                        <h6 class="text-primary mb-3">
+                            <i class="fas fa-info-circle mr-2"></i>Información Básica
+                        </h6>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="nombre" class="form-label">Nombre *</label>
+                        <input type="text" class="form-control" id="nombre" name="nombre" 
+                               value="{{ obra_social.nombre if obra_social else '' }}" 
+                               required placeholder="Nombre de la obra social">
+                        <div class="invalid-feedback">El nombre es obligatorio</div>
+                    </div>
+                    <div class="col-md-3">
+                        <label for="codigo" class="form-label">Código *</label>
+                        <input type="text" class="form-control" id="codigo" name="codigo" 
+                               value="{{ obra_social.codigo if obra_social else '' }}" 
+                               required placeholder="Código único">
+                        <div class="invalid-feedback">El código es obligatorio</div>
+                    </div>
+                    <div class="col-md-3">
+                        <label for="tipo" class="form-label">Tipo *</label>
+                        <select class="form-select" id="tipo" name="tipo" required>
+                            <option value="">Seleccionar tipo</option>
+                            {% for tipo_valor, tipo_nombre in tipos_disponibles %}
+                            <option value="{{ tipo_valor }}" 
+                                    {% if obra_social and obra_social.tipo == tipo_valor %}selected{% endif %}>
+                                {{ tipo_nombre }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                        <div class="invalid-feedback">El tipo es obligatorio</div>
+                    </div>
+                </div>
+
+                <!-- Información fiscal -->
+                <div class="row mb-4">
+                    <div class="col-12">
+                        <h6 class="text-primary mb-3">
+                            <i class="fas fa-building mr-2"></i>Información Fiscal
+                        </h6>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="cuit" class="form-label">CUIT</label>
+                        <input type="text" class="form-control" id="cuit" name="cuit" 
+                               value="{{ obra_social.cuit if obra_social else '' }}" 
+                               placeholder="XX-XXXXXXXX-X">
+                    </div>
+                    <div class="col-md-6">
+                        <label for="direccion" class="form-label">Dirección</label>
+                        <input type="text" class="form-control" id="direccion" name="direccion" 
+                               value="{{ obra_social.direccion if obra_social else '' }}" 
+                               placeholder="Dirección completa">
+                    </div>
+                </div>
+
+                <!-- Información de contacto -->
+                <div class="row mb-4">
+                    <div class="col-12">
+                        <h6 class="text-primary mb-3">
+                            <i class="fas fa-phone mr-2"></i>Información de Contacto
+                        </h6>
+                    </div>
+                    <div class="col-md-4">
+                        <label for="telefono" class="form-label">Teléfono</label>
+                        <input type="tel" class="form-control" id="telefono" name="telefono" 
+                               value="{{ obra_social.telefono if obra_social else '' }}" 
+                               placeholder="(011) 1234-5678">
+                    </div>
+                    <div class="col-md-4">
+                        <label for="email" class="form-label">Email</label>
+                        <input type="email" class="form-control" id="email" name="email" 
+                               value="{{ obra_social.email if obra_social else '' }}" 
+                               placeholder="contacto@obrasocial.com">
+                    </div>
+                    <div class="col-md-4">
+                        <label for="contacto_nombre" class="form-label">Nombre del Contacto</label>
+                        <input type="text" class="form-control" id="contacto_nombre" name="contacto_nombre" 
+                               value="{{ obra_social.contacto_nombre if obra_social else '' }}" 
+                               placeholder="Nombre del contacto principal">
+                    </div>
+                </div>
+
+                <!-- Información adicional de contacto -->
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <label for="contacto_telefono" class="form-label">Teléfono del Contacto</label>
+                        <input type="tel" class="form-control" id="contacto_telefono" name="contacto_telefono" 
+                               value="{{ obra_social.contacto_telefono if obra_social else '' }}" 
+                               placeholder="(011) 1234-5678">
+                    </div>
+                    <div class="col-md-6">
+                        <label for="contacto_email" class="form-label">Email del Contacto</label>
+                        <input type="email" class="form-control" id="contacto_email" name="contacto_email" 
+                               value="{{ obra_social.contacto_email if obra_social else '' }}" 
+                               placeholder="contacto@obrasocial.com">
+                    </div>
+                </div>
+
+                <!-- Información de cobertura -->
+                <div class="row mb-4">
+                    <div class="col-12">
+                        <h6 class="text-primary mb-3">
+                            <i class="fas fa-shield-alt mr-2"></i>Información de Cobertura
+                        </h6>
+                    </div>
+                    <div class="col-md-4">
+                        <label for="porcentaje_cobertura" class="form-label">Porcentaje de Cobertura</label>
+                        <div class="input-group">
+                            <input type="number" class="form-control" id="porcentaje_cobertura" name="porcentaje_cobertura" 
+                                   value="{{ obra_social.porcentaje_cobertura if obra_social else 0 }}" 
+                                   min="0" max="100" step="1">
+                            <span class="input-group-text">%</span>
+                        </div>
+                        <small class="form-text text-muted">Porcentaje de cobertura por defecto</small>
+                    </div>
+                    <div class="col-md-4">
+                        <label for="requiere_autorizacion" class="form-label">Requiere Autorización</label>
+                        <div class="form-check form-switch mt-2">
+                            <input class="form-check-input" type="checkbox" id="requiere_autorizacion" name="requiere_autorizacion" 
+                                   {% if obra_social and obra_social.requiere_autorizacion %}checked{% endif %}>
+                            <label class="form-check-label" for="requiere_autorizacion">
+                                Esta obra social requiere autorización previa
+                            </label>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <label for="dias_autorizacion" class="form-label">Días de Anticipación</label>
+                        <input type="number" class="form-control" id="dias_autorizacion" name="dias_autorizacion" 
+                               value="{{ obra_social.dias_autorizacion if obra_social else 0 }}" 
+                               min="0" max="365" step="1">
+                        <small class="form-text text-muted">Días de anticipación para solicitar autorización</small>
+                    </div>
+                </div>
+
+                <!-- Notas adicionales -->
+                <div class="row mb-4">
+                    <div class="col-12">
+                        <label for="notas" class="form-label">Notas Adicionales</label>
+                        <textarea class="form-control" id="notas" name="notas" rows="3" 
+                                  placeholder="Información adicional, observaciones, etc.">{{ obra_social.notas if obra_social else '' }}</textarea>
+                    </div>
+                </div>
+
+                <!-- Botones de acción -->
+                <div class="row">
+                    <div class="col-12 text-end">
+                        <a href="{{ url_for('obras_sociales.listar') }}" class="btn btn-secondary me-2">
+                            <i class="fas fa-times mr-2"></i>Cancelar
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save mr-2"></i>
+                            {% if obra_social %}Actualizar{% else %}Crear{% endif %} Obra Social
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('formObraSocial');
+    
+    // Validación del formulario
+    form.addEventListener('submit', function(event) {
+        if (!form.checkValidity()) {
+            event.preventDefault();
+            event.stopPropagation();
+        }
+        
+        form.classList.add('was-validated');
+    });
+    
+    // Validación en tiempo real del código
+    const codigoInput = document.getElementById('codigo');
+    codigoInput.addEventListener('input', function() {
+        this.value = this.value.toUpperCase();
+    });
+    
+    // Mostrar/ocultar campos de autorización según el checkbox
+    const requiereAuthCheckbox = document.getElementById('requiere_autorizacion');
+    const diasAuthInput = document.getElementById('dias_autorizacion');
+    
+    function toggleDiasAutorizacion() {
+        if (requiereAuthCheckbox.checked) {
+            diasAuthInput.disabled = false;
+            diasAuthInput.required = true;
+        } else {
+            diasAuthInput.disabled = true;
+            diasAuthInput.required = false;
+            diasAuthInput.value = 0;
+        }
+    }
+    
+    requiereAuthCheckbox.addEventListener('change', toggleDiasAutorizacion);
+    toggleDiasAutorizacion(); // Ejecutar al cargar la página
+});
+</script>
+{% endblock %}

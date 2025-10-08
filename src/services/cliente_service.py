@@ -2,7 +2,7 @@ from flask import make_response
 from src.models import Cliente
 from src.database import db
 from src.utils.validators import validar_email, validar_telefono
-from src.utils.exports import generar_excel, generar_csv
+
 import pandas as pd
 from io import BytesIO
 
@@ -78,7 +78,12 @@ class ClienteService:
             nombre=data['nombre'].strip(),
             apellido=data['apellido'].strip(),
             telefono=data.get('telefono', '').strip() or None,
-            email=data.get('email', '').strip() or None
+            email=data.get('email', '').strip() or None,
+            obra_social_id=data.get('obra_social_id') if data.get('obra_social_id') and data.get('obra_social_id') != 'particular' else None,
+            plan_id=data.get('plan_id') if data.get('plan_id') else None,
+            numero_afiliado=data.get('numero_afiliado', '').strip() or None,
+            grupo_familiar=data.get('grupo_familiar', '').strip() or None,
+            titular_id=data.get('titular_id') if data.get('titular_id') else None
         )
         
         db.session.add(cliente)
@@ -119,6 +124,16 @@ class ClienteService:
             cliente.telefono = data['telefono'].strip() or None
         if 'email' in data:
             cliente.email = data['email'].strip() or None
+        if 'obra_social_id' in data:
+            cliente.obra_social_id = data['obra_social_id'] if data['obra_social_id'] and data['obra_social_id'] != 'particular' else None
+        if 'plan_id' in data:
+            cliente.plan_id = data['plan_id'] if data['plan_id'] else None
+        if 'numero_afiliado' in data:
+            cliente.numero_afiliado = data['numero_afiliado'].strip() or None
+        if 'grupo_familiar' in data:
+            cliente.grupo_familiar = data['grupo_familiar'].strip() or None
+        if 'titular_id' in data:
+            cliente.titular_id = data['titular_id'] if data['titular_id'] else None
         
         db.session.commit()
         return cliente
@@ -137,42 +152,79 @@ class ClienteService:
     @staticmethod
     def exportar_excel(search=''):
         """Exportar clientes a Excel"""
-        query = Cliente.query.filter_by(activo=True)
-        
-        if search:
-            query = query.filter(
-                db.or_(
-                    Cliente.nombre.contains(search),
-                    Cliente.apellido.contains(search),
-                    Cliente.email.contains(search),
-                    Cliente.telefono.contains(search)
+        try:
+            query = Cliente.query.filter_by(activo=True)
+            
+            if search:
+                query = query.filter(
+                    db.or_(
+                        Cliente.nombre.contains(search),
+                        Cliente.apellido.contains(search),
+                        Cliente.email.contains(search),
+                        Cliente.telefono.contains(search)
+                    )
                 )
-            )
-        
-        clientes = query.order_by(Cliente.apellido, Cliente.nombre).all()
-        
-        # Crear DataFrame
-        data = []
-        for cliente in clientes:
-            data.append({
-                'ID': cliente.id,
-                'Nombre': cliente.nombre,
-                'Apellido': cliente.apellido,
-                'Teléfono': cliente.telefono or '',
-                'Email': cliente.email or '',
-                'Fecha Creación': cliente.fecha_creacion.strftime('%Y-%m-%d %H:%M:%S')
-            })
-        
-        df = pd.DataFrame(data)
-        output = BytesIO()
-        df.to_csv(output, index=False, encoding='utf-8')
-        output.seek(0)
-        
-        response = make_response(output.read())
-        response.headers['Content-Type'] = 'text/csv'
-        response.headers['Content-Disposition'] = 'attachment; filename=clientes.csv'
-        
-        return response
+            
+            clientes = query.order_by(Cliente.apellido, Cliente.nombre).all()
+            
+            # Crear DataFrame
+            data = []
+            for cliente in clientes:
+                try:
+                    # Obtener información de obra social y plan de forma segura
+                    obra_social_nombre = 'Particular'
+                    plan_nombre = ''
+                    
+                    try:
+                        if cliente.obra_social:
+                            obra_social_nombre = cliente.obra_social.nombre
+                        if cliente.plan:
+                            plan_nombre = cliente.plan.nombre
+                    except Exception as e:
+                        print(f"Error accediendo a relaciones del cliente {cliente.id}: {e}")
+                    
+                    data.append({
+                        'ID': cliente.id,
+                        'Nombre': cliente.nombre,
+                        'Apellido': cliente.apellido,
+                        'Teléfono': cliente.telefono or '',
+                        'Email': cliente.email or '',
+                        'Obra Social': obra_social_nombre,
+                        'Plan': plan_nombre,
+                        'Número Afiliado': cliente.numero_afiliado or '',
+                        'Grupo Familiar': cliente.grupo_familiar or '',
+                        'Fecha Creación': cliente.fecha_creacion.strftime('%Y-%m-%d %H:%M:%S') if cliente.fecha_creacion else ''
+                    })
+                except Exception as e:
+                    # Si hay un error con un cliente específico, lo saltamos y continuamos
+                    print(f"Error procesando cliente {cliente.id}: {e}")
+                    continue
+            
+            if not data:
+                # Si no hay datos, crear un Excel vacío con headers
+                df = pd.DataFrame(columns=[
+                    'ID', 'Nombre', 'Apellido', 'Teléfono', 'Email', 
+                    'Obra Social', 'Plan', 'Número Afiliado', 'Grupo Familiar', 'Fecha Creación'
+                ])
+            else:
+                df = pd.DataFrame(data)
+            
+            # Crear archivo Excel
+            output = BytesIO()
+            with pd.ExcelWriter(output, engine='openpyxl') as writer:
+                df.to_excel(writer, sheet_name='Clientes', index=False)
+            
+            output.seek(0)
+            
+            response = make_response(output.read())
+            response.headers['Content-Type'] = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+            response.headers['Content-Disposition'] = 'attachment; filename=clientes.xlsx'
+            
+            return response
+            
+        except Exception as e:
+            print(f"Error general en exportar_excel: {e}")
+            raise e
     
     @staticmethod
     def get_estadisticas_clientes():
@@ -234,49 +286,79 @@ class ClienteService:
             errores.append('El formato del teléfono no es válido')
         
         return errores
-        
-        df = pd.DataFrame(data)
-        
-        # Crear archivo Excel
-        output = BytesIO()
-        with pd.ExcelWriter(output, engine='openpyxl') as writer:
-            df.to_excel(writer, sheet_name='Clientes', index=False)
-        
-        output.seek(0)
-        
-        response = make_response(output.read())
-        response.headers['Content-Type'] = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-        response.headers['Content-Disposition'] = 'attachment; filename=clientes.xlsx'
-        
-        return response
     
     @staticmethod
     def exportar_csv(search=''):
         """Exportar clientes a CSV"""
-        query = Cliente.query.filter_by(activo=True)
-        
-        if search:
-            query = query.filter(
-                db.or_(
-                    Cliente.nombre.contains(search),
-                    Cliente.apellido.contains(search),
-                    Cliente.email.contains(search),
-                    Cliente.telefono.contains(search)
+        try:
+            query = Cliente.query.filter_by(activo=True)
+            
+            if search:
+                query = query.filter(
+                    db.or_(
+                        Cliente.nombre.contains(search),
+                        Cliente.apellido.contains(search),
+                        Cliente.email.contains(search),
+                        Cliente.telefono.contains(search)
+                    )
                 )
-            )
-        
-        clientes = query.order_by(Cliente.apellido, Cliente.nombre).all()
-        
-        # Crear CSV
-        output = BytesIO()
-        data = []
-        
-        for cliente in clientes:
-            data.append({
-                'ID': cliente.id,
-                'Nombre': cliente.nombre,
-                'Apellido': cliente.apellido,
-                'Teléfono': cliente.telefono or '',
-                'Email': cliente.email or '',
-                'Fecha Creación': cliente.fecha_creacion.strftime('%Y-%m-%d %H:%M:%S')
-            })
+            
+            clientes = query.order_by(Cliente.apellido, Cliente.nombre).all()
+            
+            # Crear CSV
+            data = []
+            
+            for cliente in clientes:
+                try:
+                    # Obtener información de obra social y plan de forma segura
+                    obra_social_nombre = 'Particular'
+                    plan_nombre = ''
+                    
+                    try:
+                        if cliente.obra_social:
+                            obra_social_nombre = cliente.obra_social.nombre
+                        if cliente.plan:
+                            plan_nombre = cliente.plan.nombre
+                    except Exception as e:
+                        print(f"Error accediendo a relaciones del cliente {cliente.id}: {e}")
+                    
+                    data.append({
+                        'ID': cliente.id,
+                        'Nombre': cliente.nombre,
+                        'Apellido': cliente.apellido,
+                        'Teléfono': cliente.telefono or '',
+                        'Email': cliente.email or '',
+                        'Obra Social': obra_social_nombre,
+                        'Plan': plan_nombre,
+                        'Número Afiliado': cliente.numero_afiliado or '',
+                        'Grupo Familiar': cliente.grupo_familiar or '',
+                        'Fecha Creación': cliente.fecha_creacion.strftime('%Y-%m-%d %H:%M:%S') if cliente.fecha_creacion else ''
+                    })
+                except Exception as e:
+                    # Si hay un error con un cliente específico, lo saltamos y continuamos
+                    print(f"Error procesando cliente {cliente.id}: {e}")
+                    continue
+            
+            if not data:
+                # Si no hay datos, crear un CSV vacío con headers
+                df = pd.DataFrame(columns=[
+                    'ID', 'Nombre', 'Apellido', 'Teléfono', 'Email', 
+                    'Obra Social', 'Plan', 'Número Afiliado', 'Grupo Familiar', 'Fecha Creación'
+                ])
+            else:
+                df = pd.DataFrame(data)
+            
+            # Crear archivo CSV
+            output = BytesIO()
+            df.to_csv(output, index=False, encoding='utf-8-sig')  # UTF-8 con BOM para Excel
+            output.seek(0)
+            
+            response = make_response(output.read())
+            response.headers['Content-Type'] = 'text/csv; charset=utf-8'
+            response.headers['Content-Disposition'] = 'attachment; filename=clientes.csv'
+            
+            return response
+            
+        except Exception as e:
+            print(f"Error general en exportar_csv: {e}")
+            raise e

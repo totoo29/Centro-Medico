@@ -8,6 +8,36 @@ from src.services.servicio_service import ServicioService
 from datetime import date, datetime, timedelta
 from src.database import db
 import calendar
+
+# Configuración de localización en español
+MESES_ES = {
+    1: 'Enero', 2: 'Febrero', 3: 'Marzo', 4: 'Abril',
+    5: 'Mayo', 6: 'Junio', 7: 'Julio', 8: 'Agosto',
+    9: 'Septiembre', 10: 'Octubre', 11: 'Noviembre', 12: 'Diciembre'
+}
+
+DIAS_ES = {
+    0: 'Lunes', 1: 'Martes', 2: 'Miércoles', 3: 'Jueves',
+    4: 'Viernes', 5: 'Sábado', 6: 'Domingo'
+}
+
+DIAS_CORTOS_ES = {
+    0: 'Lun', 1: 'Mar', 2: 'Mié', 3: 'Jue',
+    4: 'Vie', 5: 'Sáb', 6: 'Dom'
+}
+
+def formatear_fecha_es(fecha, formato='completo'):
+    """Formatear fecha en español"""
+    if formato == 'completo':
+        return f"{DIAS_ES[fecha.weekday()]}, {fecha.day} de {MESES_ES[fecha.month]} de {fecha.year}"
+    elif formato == 'mes_ano':
+        return f"{MESES_ES[fecha.month]} {fecha.year}"
+    elif formato == 'dia_corto':
+        return DIAS_CORTOS_ES[fecha.weekday()]
+    elif formato == 'dia_completo':
+        return DIAS_ES[fecha.weekday()]
+    else:
+        return fecha.strftime('%d/%m/%Y')
 # Importaciones de servicios con manejo de errores
 try:
     from src.services.turno_service import TurnoService
@@ -69,7 +99,7 @@ def generar_datos_calendario(vista, fecha_base, turnos_por_fecha):
     }
     
     if vista == 'dia':
-        calendario_data['titulo'] = fecha_base.strftime('%A, %d de %B de %Y')
+        calendario_data['titulo'] = formatear_fecha_es(fecha_base, 'completo')
         calendario_data['fechas'] = [fecha_base]
         
     elif vista == 'semana':
@@ -81,7 +111,7 @@ def generar_datos_calendario(vista, fecha_base, turnos_por_fecha):
         calendario_data['fechas'] = [lunes + timedelta(days=i) for i in range(7)]
         
     else:  # mes
-        calendario_data['titulo'] = fecha_base.strftime('%B %Y')
+        calendario_data['titulo'] = formatear_fecha_es(fecha_base, 'mes_ano')
         
         # Generar todas las semanas del mes
         primer_dia = fecha_base.replace(day=1)
@@ -289,7 +319,8 @@ def calendario():
                              profesionales=profesionales,
                              profesional_id=profesional_id,
                              calendario_data=calendario_data,
-                             estadisticas=estadisticas)
+                             estadisticas=estadisticas,
+                             formatear_fecha_es=formatear_fecha_es)
                              
     except Exception as e:
         flash(f'Error al cargar calendario: {str(e)}', 'error')
@@ -312,7 +343,7 @@ def generar_datos_calendario(vista, fecha_base, turnos_por_fecha):
     }
     
     if vista == 'dia':
-        calendario_data['titulo'] = fecha_base.strftime('%A, %d de %B de %Y')
+        calendario_data['titulo'] = formatear_fecha_es(fecha_base, 'completo')
         calendario_data['fechas'] = [fecha_base]
         
     elif vista == 'semana':
@@ -324,7 +355,7 @@ def generar_datos_calendario(vista, fecha_base, turnos_por_fecha):
         calendario_data['fechas'] = [lunes + timedelta(days=i) for i in range(7)]
         
     else:  # mes
-        calendario_data['titulo'] = fecha_base.strftime('%B %Y')
+        calendario_data['titulo'] = formatear_fecha_es(fecha_base, 'mes_ano')
         
         # Generar todas las semanas del mes
         primer_dia = fecha_base.replace(day=1)
