@@ -16,6 +16,7 @@ Sistema completo de gestión para consultorios médicos desarrollado con Flask. 
 - [Desarrollo](#desarrollo)
 - [Soporte](#soporte)
 
+<a id="características-principales"></a>
 ## ✨ Características Principales
 
 ### 🏥 Gestión Integral
@@ -40,6 +41,7 @@ Sistema completo de gestión para consultorios médicos desarrollado con Flask. 
 - Logs de actividad
 - Manejo de errores personalizado
 
+<a id="tecnologías-utilizadas"></a>
 ## 🛠️ Tecnologías Utilizadas
 
 - **Backend**: Flask 3.1.1
@@ -51,12 +53,14 @@ Sistema completo de gestión para consultorios médicos desarrollado con Flask. 
 - **Templates**: Jinja2 3.1.3
 - **Utilidades**: python-dotenv 1.0.0
 
+<a id="requisitos-previos"></a>
 ## 📦 Requisitos Previos
 
 - Python 3.8 o superior
 - pip (gestor de paquetes de Python)
 - (Opcional) PostgreSQL para producción
 
+<a id="instalación"></a>
 ## 🚀 Instalación
 
 ### 1. Clonar el repositorio
@@ -107,6 +111,7 @@ flask create-sample-data
 flask create-admin --username admin --email admin@consultorio.com --password admin123
 ```
 
+<a id="configuración"></a>
 ## ⚙️ Configuración
 
 El archivo `config.py` contiene todas las configuraciones del sistema. Puedes modificar:
@@ -126,6 +131,7 @@ El archivo `config.py` contiene todas las configuraciones del sistema. Puedes mo
 
 Para cambiar la configuración, modifica la variable de entorno `FLASK_ENV` o edita `config.py`.
 
+<a id="uso"></a>
 ## 🎯 Uso
 
 ### Iniciar la aplicación
@@ -151,6 +157,7 @@ Después de ejecutar `flask init-db` o `flask create-sample-data`:
 
 ⚠️ **Importante**: Cambia estas credenciales en producción.
 
+<a id="estructura-del-proyecto"></a>
 ## 📁 Estructura del Proyecto
 
 ```
@@ -226,6 +233,7 @@ Centro-Medico/
 └── README_OBRAS_SOCIALES.md      # Documentación de obras sociales
 ```
 
+<a id="comandos-disponibles"></a>
 ## 🔧 Comandos Disponibles
 
 ### Comandos Flask CLI
@@ -260,6 +268,7 @@ flask run --debug
 flask run --port 5001
 ```
 
+<a id="funcionalidades-por-módulo"></a>
 ## 📚 Funcionalidades por Módulo
 
 ### 👥 Gestión de Clientes
@@ -301,6 +310,7 @@ flask run --port 5001
 
 Para más detalles sobre obras sociales, consulta [README_OBRAS_SOCIALES.md](README_OBRAS_SOCIALES.md).
 
+<a id="desarrollo"></a>
 ## 💻 Desarrollo
 
 ### Estructura de Código
@@ -376,6 +386,7 @@ Para contribuir al proyecto:
 3. Probar exhaustivamente
 4. Crear un pull request con descripción detallada
 
+<a id="soporte"></a>
 ## 📞 Soporte
 
 Para soporte técnico o consultas:
