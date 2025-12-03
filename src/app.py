@@ -40,12 +40,14 @@ def create_app(config=None):
     # SOLUCIÓN: Hacer current_user disponible globalmente en plantillas
     @app.context_processor
     def inject_user():
-        """Inyectar current_user y fecha actual en todas las plantillas"""
+        """Inyectar current_user, fecha actual y configuración del sistema en todas las plantillas"""
         from flask_login import current_user
         return dict(
             current_user=current_user,
             today=date.today(),
-            now=datetime.now()
+            now=datetime.now(),
+            system_version=app.config.get('SYSTEM_VERSION', '1.0.0'),
+            system_author=app.config.get('SYSTEM_AUTHOR', 'Equipo de Desarrollo')
         )
     
     # Registrar blueprints

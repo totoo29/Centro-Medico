@@ -66,6 +66,8 @@
         .main-content {
             margin-left: var(--sidebar-width);
             min-height: 100vh;
+            display: flex;
+            flex-direction: column;
         }
 
         .top-navbar {
@@ -77,6 +79,14 @@
 
         .content-wrapper {
             padding: 2rem;
+            flex: 1;
+        }
+        
+        .footer {
+            background-color: #f8f9fa;
+            border-top: 1px solid #dee2e6;
+            padding: 1rem 2rem;
+            margin-top: auto;
         }
 
         .user-info {
@@ -235,6 +245,19 @@
             <!-- Page Content -->
             {% block content %}{% endblock %}
         </div>
+        
+        <!-- Footer -->
+        <footer class="footer mt-auto py-3">
+            <div class="container-fluid">
+                <div class="row">
+                    <div class="col-12 text-center">
+                        <small class="text-muted">
+                            Versión {{ system_version }} | Desarrollado por {{ system_author }}
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </footer>
     </div>
 
     <!-- Bootstrap JS -->

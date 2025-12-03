@@ -45,7 +45,7 @@ Sistema completo de gestión para consultorios médicos desarrollado con Flask. 
 ## 🛠️ Tecnologías Utilizadas
 
 - **Backend**: Flask 3.1.1
-- **Base de Datos**: SQLite (desarrollo) / PostgreSQL (producción)
+- **Base de Datos**: SQLite
 - **ORM**: SQLAlchemy 2.0.41
 - **Migraciones**: Flask-Migrate 4.1.0
 - **Autenticación**: Flask-Login 0.6.3
@@ -58,7 +58,6 @@ Sistema completo de gestión para consultorios médicos desarrollado con Flask. 
 
 - Python 3.8 o superior
 - pip (gestor de paquetes de Python)
-- (Opcional) PostgreSQL para producción
 
 <a id="instalación"></a>
 ## 🚀 Instalación
@@ -125,8 +124,7 @@ El archivo `config.py` contiene todas las configuraciones del sistema. Puedes mo
 ### Configuraciones Disponibles
 
 - `development`: Desarrollo con SQLite y debug activado
-- `production`: Producción con PostgreSQL
-- `postgresql`: Desarrollo con PostgreSQL
+- `production`: Producción con SQLite
 - `testing`: Testing con base de datos en memoria
 
 Para cambiar la configuración, modifica la variable de entorno `FLASK_ENV` o edita `config.py`.
@@ -369,7 +367,6 @@ flask run --port 5001
 
 - La base de datos SQLite se crea automáticamente en `instance/consultorio.db`
 - Los logs se guardan en `src/utils/log/app.log`
-- Para producción, se recomienda usar PostgreSQL
 - Cambiar `SECRET_KEY` en producción
 - Configurar variables de entorno para datos sensibles
 
